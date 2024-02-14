@@ -1,5 +1,6 @@
 import { browser } from "$app/environment";
 import { page } from "$app/stores";
+import { cardBalance, cardID, cardNickname, userPage } from "./stores";
 
 let socket: WebSocket | null = null;
 
@@ -13,8 +14,15 @@ export async function serverConnect() {
 		console.log("Connected to server!");
 	};
 	socket.onmessage = (event) => {
-		// Actual packet?!
+		// Actual packet?! crazy
 		let data = JSON.parse(event.data);
+		if ("user_page" in data) {
+			userPage.set(data.user_page);
+			cardID.set(data.card_id);
+			cardNickname.set(data.card_nickname);
+			cardBalance.set(data.card_balance);	
+		}
+		console.log(data);
 	};
 	socket.onclose = (event) => {
 		console.error("Websocket Error", event);

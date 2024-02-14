@@ -43,12 +43,10 @@ pub async fn register_campus_card(campus_card: String, db: DatabaseConnection) -
     new_participant
         .insert(&db)
         .await
-        .map(|response| {
+        .map(|participant| {
             ok_status(
                 StatusCode::ACCEPTED,
-                &super::types::TapeLeft {
-                    tape_left_cm: response.tape_left_cm,
-                },
+                &participant
             )
         })
         .unwrap_or_else(|ex| {

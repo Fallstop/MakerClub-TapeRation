@@ -20,7 +20,7 @@ pub type WebSocketConnections = HashMap<usize, SplitSink<WebSocket, Message>>;
 pub enum UserPage {
     ScanCampusCard,
     CampusCardNotFound,
-    ReleaseTape,
+    TapeLengthSelection,
     RegistrationSuccessful,
     RegistrationExists,
 }

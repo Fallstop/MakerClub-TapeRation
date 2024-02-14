@@ -11,8 +11,19 @@ pub struct CardData {
     pub tape_left_cm: f32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ApiError {
+    pub error_message: String,
+}
 
-pub async fn check_card(card_id: &str) -> CardData {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum ApiResult {
+    Ok(CardData),
+    Error(ApiError),
+}
+
+pub async fn check_card(card_id: &str) -> Result<CardData, String> {
     let base_url = ENV_CONFIG.master_url.to_owned();
 
     let client = reqwest::Client::new();
@@ -21,14 +32,11 @@ pub async fn check_card(card_id: &str) -> CardData {
         .send()
         .await
         .unwrap();
-    // let data: CardData = res.json().await.unwrap();
-    // println!("{:?}", data);
+    let data: ApiResult = res.json().await.map_err(|e| e.to_string())?;
+    println!("{:?}", data);
 
-    return CardData {
-        id: 0,
-        nick_name: "Wow What".to_string(),
-        date_registered: "2024-10-20T03:20:24.2121".to_string(),
-        last_transaction: None,
-        tape_left_cm: 100.0,
+    match data {
+        ApiResult::Ok(card_data) => Ok(card_data),
+        ApiResult::Error(error) => Err(error.error_message),
     }
 }

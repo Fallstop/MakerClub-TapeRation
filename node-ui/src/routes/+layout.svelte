@@ -1,10 +1,16 @@
+<script lang="ts">
+	import { serverConnect } from "$lib/api";
+	import { onMount } from "svelte";
+
+	onMount(() => {
+		serverConnect();
+	});
+</script>
 
 <div class="app">
-
 	<main>
 		<slot />
 	</main>
-
 </div>
 
 <style>

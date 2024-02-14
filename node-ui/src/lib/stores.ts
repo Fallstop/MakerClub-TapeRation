@@ -1,27 +1,9 @@
 import { derived, writable, type Writable } from "svelte/store";
 
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum UserPage {
-//     ScanCampusCard,
-//     CampusCardNotFound,
-//     ReleaseTape,
-//     RegistrationSuccessful,
-//     RegistrationExists,
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct UIStateUpdate {
-//     pub user_page: UserPage,
-//     pub card_nickname: Option<String>,
-//     pub card_id: Option<String>,
-//     pub card_balance: Option<f32>,
-// }
-
-
 export enum UserPage {
     ScanCampusCard = "ScanCampusCard",
     CampusCardNotFound = "CampusCardNotFound",
-    ReleaseTape = "ReleaseTape",
+    TapeLengthSelection = "TapeLengthSelection",
     RegistrationSuccessful = "RegistrationSuccessful",
     RegistrationExists = "RegistrationExists",
 }
