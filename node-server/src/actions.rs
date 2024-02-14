@@ -17,9 +17,9 @@ pub struct StateInner {
 }
 
 impl StateInner {
-    pub async fn scan_card(&mut self, card_id: &str) {
+    pub async fn scan_card(&mut self, card_id: &str, register_card: bool) {
         info!("Scanned card: {}", card_id);
-        let card_data = match crate::master_api::check_card(card_id).await {
+        let card_data = match crate::master_api::check_card(card_id, register_card).await {
             Ok(card_data) => card_data,
             Err(e) => {
                 info!("Error getting card data: {}", e);
@@ -59,7 +59,7 @@ impl StateInner {
             None => return,
         };
 
-        let card_data = match crate::master_api::check_card(card_id).await {
+        let card_data = match crate::master_api::check_card(card_id, false).await {
             Ok(card_data) => card_data,
             Err(e) => {
                 info!("Error getting card data: {}", e);

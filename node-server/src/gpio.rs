@@ -62,7 +62,7 @@ fn better_theme() -> ColorfulTheme {
 
 pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        let options = vec!["Scan Card", "Remove Card", "Select Length"];
+        let options = vec!["Scan Card", "Remove Card", "Select Length", "Register Card"];
 
         let action_selection = Select::with_theme(&better_theme())
             .with_prompt(&format!(
@@ -80,11 +80,10 @@ pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Er
                 .with_prompt("Card ID")
                 .interact_text()
                 .unwrap();
-                state.lock().await.scan_card(&card_id).await;
+                state.lock().await.scan_card(&card_id, false).await;
             },
             "Remove Card" => {
                 state.lock().await.unscan_card().await;
-
             },
             "Select Length" => {
                 let tape_length: f32 = Input::new()
@@ -93,6 +92,13 @@ pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Er
                     .unwrap();
 
                 state.lock().await.select_tape_length(tape_length).await;
+            },
+            "Register Card" => {
+                let card_id: String = Input::new()
+                .with_prompt("Card ID")
+                .interact_text()
+                .unwrap();
+                state.lock().await.scan_card(&card_id, true).await;
             },
             _ => {}
         }

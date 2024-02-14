@@ -23,12 +23,17 @@ enum ApiResult {
     Error(ApiError),
 }
 
-pub async fn check_card(card_id: &str) -> Result<CardData, String> {
+pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, String> {
     let base_url = ENV_CONFIG.master_url.to_owned();
 
     let client = reqwest::Client::new();
+
+    let base_request = match register_card {
+        true => client.put(format!("{base_url}/api/campus_card/{card_id}")),
+        false => client.get(format!("{base_url}/api/campus_card/{card_id}")),
+    };
     
-    let res = client.get(format!("{base_url}/api/campus_card/{card_id}"))
+    let res = base_request
         .send()
         .await
         .unwrap();

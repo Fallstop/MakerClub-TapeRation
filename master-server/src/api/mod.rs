@@ -12,7 +12,7 @@ pub fn create_warp_route(
     let card_endpoint = warp::path!("api" / "campus_card" / String);
 
     let register_card_endpoint = card_endpoint
-        .and(warp::post())
+        .and(warp::put())
         .and(with_db(db.clone()))
         .then(cards::register_campus_card);
 
