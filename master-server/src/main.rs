@@ -8,13 +8,11 @@ use log::info;
 use pretty_env_logger;
 use rust_embed::RustEmbed;
 
-mod gpio;
 mod websocket;
 mod db;
 mod api;
 mod env_config;
 
-use crate::gpio::{gpio_manager, keyboard_manager};
 use crate::websocket::{connection_manager, Users};
 
 #[derive(RustEmbed)]
@@ -40,14 +38,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let users = Users::new(Mutex::new(HashMap::new()));
 
-    let users_gpio = users.clone();
-    tokio::spawn(async move {
-        gpio_manager(users_gpio).await.unwrap();
-    });
-
-
-    let users = users.clone();
-
     let websocket = warp::path("stream")
         .and(warp::ws())
         .and(warp::any().map(move || users.clone()))
@@ -55,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("New Websocket connection");
 
             // And then our closure will be called when it completes...
-            ws.on_upgrade(move |socket| connection_manager(socket, users)) // Just echo all messages back...
+            ws.on_upgrade(move |socket| connection_manager(socket, users))
         });
 
     let api = api::create_warp_route(db);
