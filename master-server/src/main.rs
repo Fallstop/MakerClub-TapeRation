@@ -7,6 +7,7 @@ use warp::{reject::Rejection, Filter};
 mod api;
 mod db;
 mod env_config;
+mod names;
 mod websocket;
 
 #[cfg(feature = "serve_static")]

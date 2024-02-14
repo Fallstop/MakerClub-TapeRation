@@ -2144,6 +2144,7 @@ dependencies = [
  "migration",
  "once_cell",
  "pretty_env_logger",
+ "rand",
  "rppal",
  "rust-embed",
  "sea-orm",

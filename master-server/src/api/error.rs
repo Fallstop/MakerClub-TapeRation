@@ -4,6 +4,22 @@ use warp::{
     reply::{self},
 };
 
+#[macro_export]
+macro_rules! internal_error {
+    ($item:expr) => {
+        match $item {
+            Ok(val) => val,
+            Err(ex) => {
+                log::error!("{ex}");
+                return $crate::api::error::err(
+                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    "Internal error",
+                );
+            }
+        }
+    };
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ErrorResponse {
     pub error_message: String,
