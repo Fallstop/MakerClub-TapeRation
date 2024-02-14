@@ -20,16 +20,31 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Participants::CampusCard).string().not_null().unique_key())
+                    .col(
+                        ColumnDef::new(Participants::CampusCard)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
                     .col(ColumnDef::new(Participants::NickName).string().not_null())
-                    .col(ColumnDef::new(Participants::DateRegistered).timestamp().default(Expr::current_timestamp()).not_null())
+                    .col(
+                        ColumnDef::new(Participants::DateRegistered)
+                            .timestamp()
+                            .default(Expr::current_timestamp())
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Participants::LastTransaction).timestamp())
-                    .col(ColumnDef::new(Participants::TapeLeftCM).float().not_null())
+                    .col(
+                        ColumnDef::new(Participants::TapeLeftCM)
+                            .float()
+                            .default(0)
+                            .not_null(),
+                    )
                     .to_owned(),
             )
             .await?;
 
-            manager
+        manager
             .create_table(
                 Table::create()
                     .table(TransactionLog::Table)
@@ -43,19 +58,22 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(TransactionLog::MachineName).string())
                     .col(ColumnDef::new(TransactionLog::ParticipantID).integer())
-                    .col(ColumnDef::new(TransactionLog::TapeDeductedCM).float().not_null())
-                    .col(ColumnDef::new(TransactionLog::Timestamp).timestamp().default(Expr::current_timestamp()).not_null())
+                    .col(
+                        ColumnDef::new(TransactionLog::TapeDeductedCM)
+                            .float()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(TransactionLog::Timestamp)
+                            .timestamp()
+                            .default(Expr::current_timestamp())
+                            .not_null(),
+                    )
                     .foreign_key(
                         ForeignKeyCreateStatement::new()
                             .name("FK_TransactionLog_Participants")
-                            .from(
-                                TransactionLog::Table,
-                                TransactionLog::ParticipantID,
-                            )
-                            .to(
-                                Participants::Table,
-                                Participants::Id,
-                            ),
+                            .from(TransactionLog::Table, TransactionLog::ParticipantID)
+                            .to(Participants::Table, Participants::Id),
                     )
                     .to_owned(),
             )
@@ -87,7 +105,7 @@ enum Participants {
     NickName,
     DateRegistered,
     TapeLeftCM,
-    LastTransaction
+    LastTransaction,
 }
 
 #[derive(DeriveIden)]
@@ -97,5 +115,5 @@ enum TransactionLog {
     ParticipantID,
     MachineName,
     TapeDeductedCM,
-    Timestamp
+    Timestamp,
 }

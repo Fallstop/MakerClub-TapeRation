@@ -1,38 +1,64 @@
-use std::collections::HashMap;
-
-use tokio::sync::Mutex;
-
-use warp::Filter;
-
-use log::info;
-use pretty_env_logger;
-use rust_embed::RustEmbed;
-
-mod websocket;
-mod db;
-mod api;
-mod env_config;
-
 use crate::websocket::{connection_manager, Users};
+use log::info;
+use std::collections::HashMap;
+use tokio::sync::Mutex;
+use warp::{reject::Rejection, Filter};
 
-#[derive(RustEmbed)]
+mod api;
+mod db;
+mod env_config;
+mod websocket;
+
+#[cfg(feature = "serve_static")]
+#[derive(rust_embed::RustEmbed)]
 #[folder = "www_static/"]
 struct StaticData;
 
+#[cfg(feature = "serve_static")]
+async fn serve<T, U>(api: T, websocket: U)
+where
+    T: Filter<Error = Rejection> + Sync + Send + Clone + 'static,
+    T::Extract: warp::reply::Reply,
+    U: Filter<Error = Rejection> + Sync + Send + Clone + 'static,
+    U::Extract: warp::reply::Reply,
+{
+    // GET /hello/warp => 200 OK with body "Hello, warp!"
+    let static_dir = warp_embed::embed(&StaticData);
+    let index_html = warp_embed::embed_one(&StaticData, "index.html");
+
+    warp::serve(
+        api.or(static_dir)
+            .or(websocket)
+            .or(index_html)
+            .or(static_dir),
+    )
+    .run(([0, 0, 0, 0], 8080))
+    .await;
+}
+
+#[cfg(not(feature = "serve_static"))]
+async fn serve<T, U>(api: T, websocket: U)
+where
+    T: Filter<Error = Rejection> + Sync + Send + Clone + 'static,
+    T::Extract: warp::reply::Reply,
+    U: Filter<Error = Rejection> + Sync + Send + Clone + 'static,
+    U::Extract: warp::reply::Reply,
+{
+    warp::serve(api.or(websocket))
+        .run(([0, 0, 0, 0], 8080))
+        .await;
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if let Err(_) = std::env::var("RUST_LOG") {
+    if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
+
     pretty_env_logger::init();
 
     info!("Initialising DB");
     let db = db::connect().await;
-
-
-    // GET /hello/warp => 200 OK with body "Hello, warp!"
-    let static_dir = warp_embed::embed(&StaticData);
-    let index_html = warp_embed::embed_one(&StaticData, "index.html");
 
     info!("Starting server on http://localhost:8080/");
 
@@ -50,9 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let api = api::create_warp_route(db);
 
-    warp::serve(api.or(static_dir).or(websocket).or(index_html))
-        .run(([0, 0, 0, 0], 8080))
-        .await;
+    serve(api, websocket).await;
 
     Ok(())
 }
