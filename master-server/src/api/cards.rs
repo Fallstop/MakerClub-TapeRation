@@ -8,8 +8,13 @@ use crate::names::new_name;
 use log::error;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 use sea_orm::{DatabaseConnection, Set};
+use serde::Deserialize;
 use warp::http::StatusCode;
 use warp::reply;
+
+fn now() -> sea_orm::prelude::ChronoDateTime {
+    chrono::Local::now().naive_local()
+}
 
 async fn create_unused_name(db: &DatabaseConnection) -> Result<String, DbErr> {
     loop {
@@ -75,12 +80,7 @@ pub async fn register_campus_card(campus_card: String, db: DatabaseConnection) -
     new_participant
         .insert(&db)
         .await
-        .map(|participant| {
-            ok_status(
-                StatusCode::ACCEPTED,
-                &participant
-            )
-        })
+        .map(|participant| ok_status(StatusCode::ACCEPTED, &participant))
         .unwrap_or_else(|ex| {
             error!("{}", ex);
             err(StatusCode::CONFLICT, "Participant already registered")
@@ -105,9 +105,14 @@ pub async fn list_campus_cards(db: DatabaseConnection) -> impl warp::Reply {
         })
 }
 
+#[derive(Deserialize, Debug, Clone, Copy)]
+pub struct SetParams {
+    tape_cm: f32,
+}
+
 pub async fn set_tape(
     campus_card: String,
-    tape_cm: f32,
+    SetParams { tape_cm }: SetParams,
     db: DatabaseConnection,
 ) -> impl warp::Reply {
     let mut participant: ActiveParticipant = match find_by_campus_card(campus_card, &db).await {
@@ -117,6 +122,8 @@ pub async fn set_tape(
     .into();
 
     participant.tape_left_cm = Set(tape_cm);
+    participant.last_transaction = Set(Some(now()));
+
     if let Err(ex) = participant.update(&db).await {
         error!("{ex}");
         err(StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
@@ -132,7 +139,7 @@ pub async fn set_tape(
 
 pub async fn add_tape(
     campus_card: String,
-    tape_cm: f32,
+    SetParams { tape_cm }: SetParams,
     db: DatabaseConnection,
 ) -> impl warp::Reply {
     let participant = match find_by_campus_card(campus_card, &db).await {
@@ -144,6 +151,7 @@ pub async fn add_tape(
 
     let mut participant: ActiveParticipant = participant.into();
     participant.tape_left_cm = Set(old_tape_cm + tape_cm);
+    participant.last_transaction = Set(Some(now()));
 
     if let Err(ex) = participant.update(&db).await {
         error!("{ex}");
@@ -152,7 +160,7 @@ pub async fn add_tape(
         ok_status(
             StatusCode::ACCEPTED,
             &super::types::TapeLeft {
-                tape_left_cm: tape_cm,
+                tape_left_cm: old_tape_cm + tape_cm,
             },
         )
     }
