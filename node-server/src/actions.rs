@@ -5,7 +5,7 @@ use log::info;
 use warp::filters::ws::{Message, WebSocket};
 use tokio::sync::Mutex;
 
-use crate::websocket::{send_ui_update, UIStateUpdate, WebSocketConnections};
+use crate::websocket::{send_ui_update, UIStateUpdate, UserPage, WebSocketConnections};
 
 
 pub type State = Arc<Mutex<StateInner>>;
@@ -23,17 +23,21 @@ impl StateInner {
             Ok(card_data) => card_data,
             Err(e) => {
                 info!("Error getting card data: {}", e);
-                return;
+                if register_card {
+                    self.ui_update(UserPage::RegistrationExists).await;
+                    return;
+                } else {
+                    self.ui_update(UserPage::CampusCardNotFound).await;
+                    return;
+                }
             }
         };
+        self.card_id = Some(card_id.to_string());
+        self.card_nickname = Some(card_data.nick_name);
+        self.card_balance = Some(card_data.tape_left_cm);
 
-        let ui_update = UIStateUpdate {
-            user_page: crate::websocket::UserPage::TapeLengthSelection,
-            card_id: Some(card_id.to_string()),
-            card_nickname: Some(card_data.nick_name),
-            card_balance: Some(card_data.tape_left_cm),
-        };
-        send_ui_update(&mut self.websocket_stream, ui_update).await;
+
+        self.ui_update(UserPage::TapeLengthSelection).await;
     }
     
     pub async fn unscan_card(&mut self) {
@@ -42,13 +46,7 @@ impl StateInner {
         self.card_nickname = None;
         self.card_balance = None;
 
-        let ui_update = UIStateUpdate {
-            user_page: crate::websocket::UserPage::ScanCampusCard,
-            card_id: None,
-            card_nickname: None,
-            card_balance: None,
-        };
-        send_ui_update(&mut self.websocket_stream, ui_update).await;
+        self.ui_update(UserPage::ScanCampusCard).await;
     }
     
     pub async fn select_tape_length(&mut self, tape_length: f32) {
@@ -67,18 +65,30 @@ impl StateInner {
             }
         };
 
+        self.card_id = Some(card_id.to_string());
+        self.card_nickname = Some(card_data.nick_name);
+        self.card_balance = Some(card_data.tape_left_cm);
+
         if tape_length < card_data.tape_left_cm {
             // Valid Action!
 
-            let ui_update = UIStateUpdate {
-                user_page: crate::websocket::UserPage::TapeLengthSelection,
-                card_id: Some(card_id.to_string()),
-                card_nickname: Some(card_data.nick_name),
-                card_balance: Some(card_data.tape_left_cm),
-            };
-            send_ui_update(&mut self.websocket_stream, ui_update).await;
+            // Call API to update tape length
+            
+            self.card_balance = Some(card_data.tape_left_cm - tape_length);
+
+            self.ui_update(UserPage::TapeLengthSelection).await;
         }
 
+    }
+
+    pub async fn ui_update(&mut self, page: UserPage) {
+        let ui_update = UIStateUpdate {
+            user_page: page,
+            card_id: self.card_id.clone(),
+            card_nickname: self.card_nickname.clone(),
+            card_balance: self.card_balance.clone(),
+        };
+        send_ui_update(&mut self.websocket_stream, ui_update).await;
     }
 }
 

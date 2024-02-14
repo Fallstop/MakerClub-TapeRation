@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 use serde::{Deserialize, Serialize};
 
 use crate::env_config::ENV_CONFIG;
@@ -15,6 +17,14 @@ pub struct CardData {
 struct ApiError {
     pub error_message: String,
 }
+impl Display for ApiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ApiError: {}", self.error_message)
+    }
+}
+impl Error for ApiError {
+
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -23,7 +33,7 @@ enum ApiResult {
     Error(ApiError),
 }
 
-pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, String> {
+pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, Box<dyn Error + Send + Sync>> {
     let base_url = ENV_CONFIG.master_url.to_owned();
 
     let client = reqwest::Client::new();
@@ -35,13 +45,12 @@ pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, 
     
     let res = base_request
         .send()
-        .await
-        .unwrap();
+        .await?;
     let data: ApiResult = res.json().await.map_err(|e| e.to_string())?;
     println!("{:?}", data);
 
     match data {
         ApiResult::Ok(card_data) => Ok(card_data),
-        ApiResult::Error(error) => Err(error.error_message),
+        ApiResult::Error(error) => Err(Box::new(error)),
     }
 }
