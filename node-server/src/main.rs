@@ -12,6 +12,7 @@ mod gpio;
 mod websocket;
 mod env_config;
 mod actions;
+mod master_api;
 
 use crate::actions::{State, StateInner};
 use crate::gpio::{gpio_manager, keyboard_manager};
@@ -38,6 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = State::new(Mutex::new(StateInner {
         websocket_stream: HashMap::new(),
         card_balance: None,
+        card_nickname: None,
         card_id: None
     }));
 

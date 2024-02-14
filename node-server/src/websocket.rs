@@ -14,6 +14,7 @@ use warp::filters::ws::{Message, WebSocket};
 
 use crate::actions::State;
 
+pub type WebSocketConnections = HashMap<usize, SplitSink<WebSocket, Message>>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UserPage {
@@ -66,4 +67,16 @@ pub async fn connection_manager(ws: WebSocket, state: State) {
         // User has disconnected, cleanup
         state.lock().await.websocket_stream.remove(&user_id);
     });
+}
+
+pub async fn send_ui_update(websocket_stream: &mut WebSocketConnections, update: UIStateUpdate) {
+    let update = Message::text(serde_json::to_string(&update).unwrap());
+    for user in websocket_stream.values_mut() {
+        match user.send(update.clone()).await {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Websocket error: {}", e);
+            }
+        }
+    }
 }

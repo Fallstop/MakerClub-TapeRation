@@ -87,11 +87,11 @@ pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Er
 
             },
             2 => {
-                let tape_length: usize = Input::new()
+                let tape_length: f32 = Input::new()
                 .with_prompt("Tape Length")
                 .interact_text()
                 .unwrap();
-            
+
                 state.lock().await.select_tape_length(tape_length).await;
 
             },
