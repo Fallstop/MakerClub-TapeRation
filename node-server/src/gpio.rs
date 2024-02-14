@@ -1,19 +1,22 @@
 use std::time::Duration;
+use dialoguer::{theme::ColorfulTheme, Select, Input};
+
 
 use futures_util::SinkExt;
 use log::info;
 use rppal::{gpio::Gpio, system::DeviceInfo};
 
 use tokio::{io::AsyncReadExt, time::sleep};
+use console::{style, Style, Term};
 use warp::filters::ws::Message;
 
-use crate::websocket::Users;
+use crate::actions::State;
 
 use debouncr::{debounce_3, Edge};
 
 const GPIO_REED_SWITCH: u8 = 21;
 
-pub async fn gpio_manager(users: Users) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn gpio_manager(state: State) -> Result<(), Box<dyn std::error::Error>> {
     info!(
         "Loading GPIO, running on {}",
         DeviceInfo::new()
@@ -35,9 +38,6 @@ pub async fn gpio_manager(users: Users) -> Result<(), Box<dyn std::error::Error>
             Some(Edge::Rising) => {
                 if alternating_switch {
                     info!("Reed switch opened");
-                    for user in users.lock().await.values_mut() {
-                        user.send(Message::text("click")).await?;
-                    }
                     alternating_switch = false;
                 } else {
                     alternating_switch = true;
@@ -48,16 +48,54 @@ pub async fn gpio_manager(users: Users) -> Result<(), Box<dyn std::error::Error>
         sleep(Duration::from_micros(2500)).await;
     }
 }
-pub async fn keyboard_manager(users: Users) -> Result<(), Box<dyn std::error::Error>> {
-    let mut stdin = tokio::io::stdin();
-    let mut buf: [u8; 1] = [0];
+
+fn better_theme() -> ColorfulTheme {
+    ColorfulTheme {
+        defaults_style: Style::new(),
+        inactive_item_style: Style::new(),
+        active_item_style: Style::new().bold(),
+        active_item_prefix: style(">".to_string()).for_stderr().bold().green(),
+        ..ColorfulTheme::default()
+    }
+}
+
+
+pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        stdin
-            .read_exact(&mut buf)
-            .await
-            .expect("Failed to read from stdin");
-        for user in users.lock().await.values_mut() {
-            user.send(Message::text("click")).await?;
+        let options = vec!["Scan Card", "Remove Card", "Select Length"];
+
+        let action_selection = Select::with_theme(&better_theme())
+            .with_prompt(&format!(
+                "{}",
+                style("Select an action").blue().underlined().bold()
+            ))
+            .default(0)
+            .items(&options[..])
+            .interact()
+            .unwrap();
+
+        match action_selection {
+            0 => {
+                let card_id: String = Input::new()
+                .with_prompt("Card ID")
+                .interact_text()
+                .unwrap();
+                state.lock().await.scan_card(&card_id).await;
+            },
+            1 => {
+                state.lock().await.unscan_card().await;
+
+            },
+            2 => {
+                let tape_length: usize = Input::new()
+                .with_prompt("Tape Length")
+                .interact_text()
+                .unwrap();
+            
+                state.lock().await.select_tape_length(tape_length).await;
+
+            },
+            _ => {}
         }
     }
 }
