@@ -1,0 +1,258 @@
+openapi: "3.0.0"
+servers:
+  - url: http;//localhost:8080
+    description: Local
+info:
+  title: "Maker Club Tape Despensor Master API"
+  version: "0.0.1"
+
+tags: 
+  - name: Authentication
+    description: API routes for checking that a user is authorized
+  - name: Participant
+    description: Routes for acting on a specific campus card
+  - name: Global
+    description: Routes acting on all participants
+
+paths:
+  /login:
+    get:
+      description: Check the password
+      tags: 
+        - Authentication
+      security: 
+        - Password: []
+      responses:
+        202:
+          description: "If the login attempt was successful"
+          content:
+            text/plain:
+              example: ""
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+
+  /api/campus_card/{campus_card_id}:
+    get:
+      description: Get the participant information of a campus card
+      tags:
+        - Participant
+      parameters: 
+        - $ref: "#/components/parameters/campus_card_id"
+      responses:
+        200:
+          description: The participant of the requested campus card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Participant"
+        404:
+          $ref: "#/components/responses/NotFound"
+    put:
+      description: Register a new campus card
+      tags:
+        - Participant
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/campus_card_id"
+      responses:
+        200:
+          description: The user was added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Participant"
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+        409:
+          description: A campus card with the given ID has already been registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error_message: "The campus card has already been registered"
+
+  /api/campus_card/{campus_card_id}/add:
+    post:
+      description: Add a given amount of tape to the given campus card
+      tags:
+        - Participant
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/campus_card_id"
+        - $ref: "#/components/parameters/tape_cm"
+      responses:
+        200:
+          description: Add tape to the person
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Participant"
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+        404:
+          $ref: "#/components/responses/NotFound"
+  /api/campus_card/{campus_card_id}/set:
+    post:
+      description: Set the amount of tape a campus card has
+      tags:
+        - Participant
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/campus_card_id"
+        - $ref: "#/components/parameters/tape_cm"
+      responses:
+        200:
+          description: Add tape to the person
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Participant"
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+        404:
+          $ref: "#/components/responses/NotFound"
+
+  /api/campus_card/{campus_card_id}/new_name:
+    post:
+      description: Generate a new name for a user if they got something tragic or inapproiate
+      tags:
+        - Participant
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/campus_card_id"
+      responses:
+        200:
+          description: The name was successfully regerated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+        404:
+          $ref: "#/components/responses/NotFound"
+          
+  /api/campus_card:
+    get:
+      description: Get all participants
+      tags:
+        - Global
+      responses:
+        200:
+          description: The participant of the requested campus card
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Participant"
+  /api/campus_card/add:
+    post:
+      description: Add a given amount of tape to the given campus card
+      tags:
+        - Global
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/tape_cm"
+      responses:
+        204:
+          description: Added tape to all users
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: ""
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+  /api/campus_card/set:
+    post:
+      description: Set the amount of tape all campus card has
+      tags:
+        - Global
+      security: 
+        - Password: []
+      parameters:
+        - $ref: "#/components/parameters/tape_cm"
+      responses:
+        204:
+          description: Added tape to everyone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Participant"
+        400:
+          $ref: "#/components/responses/NotAuthenticated"
+
+
+components:
+  responses:
+    NotAuthenticated:
+      description: "When not authenticated with api"
+      content:
+        text/plain: 
+          example: Invalid request header "password"
+    NotFound:
+      description: The participant was not found
+      content:
+        application/json:
+          example:
+            error_message: The campus card could not be found
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Participant:
+      properties:
+        id: 
+          type: number
+        campus_card:
+          type: string
+        nick_name: 
+          type: string
+        date_registered:
+          type: string
+          format: date
+        last_transaction:
+          type: string
+          format: date
+        tape_left_cm:
+          type: integer
+          format: double
+    Error:
+      properties:
+        error_message:
+          type: string
+    
+
+
+  parameters:
+    campus_card_id:
+      in: path
+      name: campus_card_id
+      description: The ID of the desired campus card
+      required: true
+      schema:
+        type: integer
+    tape_cm:
+      in: query
+      name: tape_cm
+      description: The amount of tape to add/set
+      required: true 
+      schema:
+        type: integer
+        format: double
+
+  securitySchemes: 
+    Password:
+      type: apiKey
+      in: header
+      name: password
