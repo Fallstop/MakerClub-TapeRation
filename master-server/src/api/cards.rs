@@ -6,8 +6,11 @@ use crate::db::entities::participants::{
 use crate::internal_error;
 use crate::names::new_name;
 use log::error;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter};
-use sea_orm::{DatabaseConnection, Set};
+use sea_orm::IntoSimpleExpr;
+use sea_orm::{
+    sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
+    QueryFilter, Set,
+};
 use serde::Deserialize;
 use warp::http::StatusCode;
 use warp::reply;
@@ -164,4 +167,35 @@ pub async fn add_tape(
             },
         )
     }
+}
+
+pub async fn add_all(SetParams { tape_cm }: SetParams, db: DatabaseConnection) -> impl warp::Reply {
+    internal_error!(
+        ParticipantTable::update_many()
+            .col_expr(
+                participants::Column::TapeLeftCm,
+                Expr::add(
+                    Expr::col(participants::Column::TapeLeftCm),
+                    Expr::val(tape_cm),
+                ),
+            )
+            .exec(&db)
+            .await
+    );
+
+    super::error::ok_status(StatusCode::NO_CONTENT, &())
+}
+
+pub async fn set_all(SetParams { tape_cm }: SetParams, db: DatabaseConnection) -> impl warp::Reply {
+    internal_error!(
+        ParticipantTable::update_many()
+            .col_expr(
+                participants::Column::TapeLeftCm,
+                Expr::val(tape_cm).into_simple_expr()
+            )
+            .exec(&db)
+            .await
+    );
+
+    super::error::ok_status(StatusCode::NO_CONTENT, &())
 }
