@@ -1,6 +1,9 @@
+<script lang='ts'>
+	import './styles.scss';
+</script>
+
 
 <div class="app">
-
 	<main>
 		<slot />
 	</main>
@@ -35,9 +38,9 @@
 		padding: 12px;
 	}
 
-	footer a {
+	/* footer a {
 		font-weight: bold;
-	}
+	} */
 
 	@media (min-width: 480px) {
 		footer {
