@@ -1,5 +1,6 @@
 use crate::{db::with_db, env_config::ENV_CONFIG};
 use sea_orm::DatabaseConnection;
+use utoipa_redoc::Redoc;
 use warp::{reject::Rejection, reply::Reply, Filter};
 
 mod cards;
@@ -10,9 +11,30 @@ fn auth() -> impl Filter<Extract = (), Error = Rejection> + Copy {
     warp::header::exact("password", &ENV_CONFIG.password)
 }
 
+#[cfg(not(debug_assertions))]
+async fn api_docs() -> impl warp::Reply {
+    use warp::http::{header, Response};
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, "application/")
+        .body(include_str!("../../open-api.yaml"))
+}
+
+#[cfg(debug_assertions)]
+async fn api_docs() -> impl warp::Reply {
+    use warp::http::{header, Response};
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(std::fs::read_to_string("open-api.yaml").expect("Could not read openapi docs"))
+}
+
 pub fn create_warp_route(
     db: DatabaseConnection,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+    let openapi = warp::path!(".openapi.yml").and(warp::get()).then(api_docs);
+    let redoc = Redoc::new("/.openapi.yml");
+
     let login = warp::path!("login")
         .and(warp::get())
         .and(auth())
@@ -69,4 +91,5 @@ pub fn create_warp_route(
         .or(list_cards)
         .or(set_amonut)
         .or(add_amount)
+        .or(openapi)
 }
