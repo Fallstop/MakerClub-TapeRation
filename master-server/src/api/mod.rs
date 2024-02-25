@@ -16,7 +16,7 @@ async fn api_docs() -> impl warp::Reply {
     use warp::http::{header, Response};
 
     Response::builder()
-        .header(header::CONTENT_TYPE, "application/")
+        .header(header::CONTENT_TYPE, "text/x-yaml")
         .body(include_str!("../../open-api.yaml"))
 }
 
@@ -25,15 +25,18 @@ async fn api_docs() -> impl warp::Reply {
     use warp::http::{header, Response};
 
     Response::builder()
-        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::CONTENT_TYPE, "text/x-yaml")
         .body(std::fs::read_to_string("open-api.yaml").expect("Could not read openapi docs"))
 }
 
 pub fn create_warp_route(
     db: DatabaseConnection,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let openapi = warp::path!(".openapi.yml").and(warp::get()).then(api_docs);
-    let redoc = Redoc::new("/.openapi.yml");
+    let openapi = warp::path!("openapi.yaml").and(warp::get()).then(api_docs);
+    let redoc_ui = Redoc::new("/openapi.yaml");
+    let redoc = warp::path("docs")
+        .and(warp::get())
+        .map(move || warp::reply::html(redoc_ui.to_html()));
 
     let login = warp::path!("login")
         .and(warp::get())
@@ -92,4 +95,5 @@ pub fn create_warp_route(
         .or(set_amonut)
         .or(add_amount)
         .or(openapi)
+        .or(redoc)
 }
