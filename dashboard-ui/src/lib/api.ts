@@ -35,11 +35,11 @@ export function login(password: string | null = null) {
 	password = password || get(adminToken);
 
 	fetch(`http://${location.hostname}:8080/login`, {
-		method: 'POST',
+		method: 'GET',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'password': password ?? ""
 		},
-		body: JSON.stringify({ password })
 	})
 	.then(response => {
 		if (response.ok) {

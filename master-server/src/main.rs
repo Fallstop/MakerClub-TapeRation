@@ -46,8 +46,12 @@ where
     U::Extract: warp::reply::Reply,
 {
     let cors = warp::cors()
-        .allow_any_origin();
-    warp::serve(api.with(cors).or(websocket))
+        .allow_any_origin()
+        .allow_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+        .allow_headers(vec!["Content-Type"]);
+    let routes = api.or(websocket); 
+
+    warp::serve(routes.recover(api::error::handle_rejection).with(cors))
         .run(([0, 0, 0, 0], 8080))
         .await;
 }

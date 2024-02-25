@@ -47,3 +47,9 @@ pub fn err(status_code: StatusCode, msg: impl ToString) -> reply::WithStatus<rep
         status_code,
     )
 }
+
+pub async fn handle_rejection(
+    err: warp::Rejection,
+) -> Result<impl warp::Reply, std::convert::Infallible> {
+    Ok(warp::reply::json(&format!("{:?}", err)))
+}

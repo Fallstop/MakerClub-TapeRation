@@ -4,7 +4,7 @@ use utoipa_redoc::Redoc;
 use warp::{reject::Rejection, reply::Reply, Filter};
 
 mod cards;
-mod error;
+pub mod error;
 pub mod types;
 
 fn auth() -> impl Filter<Extract = (), Error = Rejection> + Copy {
