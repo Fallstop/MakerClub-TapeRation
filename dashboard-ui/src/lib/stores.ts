@@ -23,3 +23,12 @@ function useLocalStorage<T>(store: Writable<T>, key: string) {
 
 export let adminToken: Writable<string | null> = writable(null);
 useLocalStorage(adminToken, 'adminToken');
+
+export type User = {
+    id: number;
+    campus_card: string;
+    nick_name: string;
+    date_registered: string;
+    last_transaction: string;
+    tape_left_cm: number;
+};

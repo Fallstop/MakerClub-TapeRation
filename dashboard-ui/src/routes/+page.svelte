@@ -1,53 +1,125 @@
 <script lang="ts">
-    import { login } from '$lib/api'
+    import { login, set_tape, add_tape } from '$lib/api'
     import { onMount } from 'svelte';
+    import { fuzzy } from 'fast-fuzzy';
+    import { writable } from 'svelte/store';
+    import type { User } from '$lib/stores';
     
     onMount(() => {
         login()
     })
 
-    let users = [
+    /*
+    export type User = {
+        id: number;
+        campus_card: string;
+        nick_name: string;
+        date_registered: string;
+        last_transaction: string;
+        tape_left_cm: number;
+    };
+    */
+
+    let search = writable('');
+
+	function filter(user: User, search: string) {
+		if (!search) {
+			return true;
+		}
+		return fuzzy(search, user.nick_name) > 0.75;
+	}
+
+
+    let users: User[] = [
         {
-            name: 'user1',
-            tape: 5
+            id: 1,
+            campus_card: '123456',
+            nick_name: 'John',
+            date_registered: '2021-01-01',
+            last_transaction: '2021-01-01',
+            tape_left_cm: 1001
         },
         {
-            name: 'user2',
-            tape: 2
+            id: 2,
+            campus_card: '123457',
+            nick_name: 'Jane',
+            date_registered: '2021-01-01',
+            last_transaction: '2021-01-01',
+            tape_left_cm: 100
         },
         {
-            name: 'user3',
-            tape: 1321983
+            id: 3,
+            campus_card: '123458',
+            nick_name: 'Jack',
+            date_registered: '2021-01-01',
+            last_transaction: '2021-01-01',
+            tape_left_cm: 100
+        },
+        {
+            id: 4,
+            campus_card: '123459',
+            nick_name: 'Jill',
+            date_registered: '2021-01-01',
+            last_transaction: '2021-01-01',
+            tape_left_cm: 100
+        },
+        {
+            id: 5,
+            campus_card: '123460',
+            nick_name: 'James',
+            date_registered: '2021-01-01',
+            last_transaction: '2021-01-01',
+            tape_left_cm: 69
         }
-    
     ]
+
+    function handle_set_tape(user: User, form: HTMLFormElement) {
+        const tape = form.tape.value - user.tape_left_cm;
+        add_tape(user.id, tape);
+        console.log('set tape', user, tape);
+    } 
+
+    function handle_add_tape(user: User, form: HTMLFormElement) {
+        const tape = form.tape.value;
+        add_tape(user.id, tape);
+        console.log('add tape', user, tape);
+    }
+
 </script>
 
 <h1>Admin Dashboard</h1>
+
 <div id="universal-data-controls">
-    <!-- total global tape length -->
-    <!-- add to all -->
+    <h2>Total Tape Allocated: {users.reduce((acc, user) => acc + user.tape_left_cm, 0)}cm</h2>
+    <input type="number" value="0"/>
+    <button>Add to All</button>
 </div>
+
+<div class="search">
+	<input type="text" placeholder="Search Users" bind:value={$search} />
+</div>
+
 <div id="users">
-    <!-- list of users -->
-    <!-- add tape for user -->
-    <!-- set tape for user -->
     <table>
         <tr>
             <th>User</th>
-            <th>Tape</th>
-            <th>Add</th>
+            <th>Tape (cm)</th>
+            <th>Add (cm)</th>
         </tr>
         {#each users as user}
-            <tr>
-                <td>{user.name}</td>
+            <tr class:hidden={!filter(user, $search)}>
+                <td>{user.nick_name}</td>
                 <td>
-                    <input type="number" value={user.tape}>
-                    <button>Set</button>
+                    <form on:submit|preventDefault={(form) => {handle_set_tape(user, form)}}>
+                        <input name="tape" type="number" value={user.tape_left_cm}>
+                        <button type="submit">Set</button>
+                    </form>
                 </td>
                 <td>
-                    <input class="add-tape" type="number" value="0"/>
-                    <button class="add-tape">Add</button>
+                    <form on:submit|preventDefault={(form) => {handle_add_tape(user, form)}}>
+                        <input name="tape" type="number" bind:value={user.tape_left_cm}>
+                        <button type="submit">Add</button>
+                    </form>
                 </td>
             </tr>
         {/each}
@@ -57,4 +129,60 @@
 
 
 <style lang="scss">
+    #universal-data-controls {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        margin-bottom: 4em;
+        input {
+            margin-bottom: 4px;
+        }
+    }
+    .search {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-bottom: 2em;
+    }
+    #users {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    input {
+        font-size: large;
+        padding: 0.5rem;
+        border-radius: 10px;
+    }
+    button {
+        font-size: large;
+        padding: 0.5rem;
+        border-radius: 10px;
+        background-color: #3f3f3f;
+        color: white;
+        border: none;
+        transition: background-color 0.3s;
+        &:hover {
+            background-color: #5f5f5f;
+            cursor: pointer;
+        }
+    }
+
+    table {
+        width: 100%;
+        table-layout: fixed;
+        // border: #3f3f3f 2px solid;
+        // border-radius: 10px;
+    }
+    th, td {
+        text-align: center;
+        width: 33.33%;
+        font-size: large;
+    } 
+    .hidden {
+        display: none;
+    }
 </style>
