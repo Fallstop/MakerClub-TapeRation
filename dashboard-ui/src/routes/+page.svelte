@@ -110,14 +110,14 @@
             <tr class:hidden={!filter(user, $search)}>
                 <td>{user.nick_name}</td>
                 <td>
-                    <form on:submit|preventDefault={(form) => {handle_set_tape(user, form)}}>
+                    <form on:submit|preventDefault={(form) => {handle_set_tape(user, form.currentTarget)}}>
                         <input name="tape" type="number" value={user.tape_left_cm}>
                         <button type="submit">Set</button>
                     </form>
                 </td>
                 <td>
-                    <form on:submit|preventDefault={(form) => {handle_add_tape(user, form)}}>
-                        <input name="tape" type="number" bind:value={user.tape_left_cm}>
+                    <form on:submit|preventDefault={(form) => {handle_add_tape(user, form.currentTarget)}}>
+                        <input name="tape" type="number" value="0">
                         <button type="submit">Add</button>
                     </form>
                 </td>

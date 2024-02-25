@@ -34,26 +34,60 @@ export function sendMessage(message: object) {
 export function login(password: string | null = null) {
 	password = password || get(adminToken);
 
-	fetch(`http://${location.hostname}:8080/login`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			'password': password ?? ""
-		},
-	})
-	.then(response => {
-		if (response.ok) {
-			console.log('Login successful');
-			adminToken.set(password);
-			goto('/');
-		} else {
-			console.error('Login failed');
-			goto('/login');
-		}
-	})
-	.catch(error => {
-		console.error('Login error:', error);
-	});
+	if (!password || password == null) {
+		goto("/login");
+		return;
+	}
+
+	try {
+		new Promise<void>((resolve, reject) => {
+			let xhr = new XMLHttpRequest();
+			xhr.open("GET", `http://${location.hostname}:8080/login`, true);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.setRequestHeader("password", password || "");
+			xhr.onreadystatechange = () => {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						adminToken.set(password);
+						console.log("Login successful");
+						goto("/");
+						resolve();
+					} else {
+						console.error("Login failed");
+						goto("/login");
+						reject();
+					}
+				}
+			};
+			xhr.send();
+		});
+	}
+	catch (error) {
+		console.error("Login error:", error);
+		goto("/login");
+	}	
+
+
+	// fetch(`http://${location.hostname}:8080/login`, {
+	// 	method: 'POST',
+	// 	headers: {
+	// 		'Content-Type': 'application/json'
+	// 	},
+	// 	body: JSON.stringify({ password })
+	// })
+	// .then(response => {
+	// 	if (response.ok) {
+	// 		console.log('Login successful');
+	// 		adminToken.set(password);
+	// 		goto('/');
+	// 	} else {
+	// 		console.error('Login failed');
+	// 		goto('/login');
+	// 	}
+	// })
+	// .catch(error => {
+	// 	console.error('Login error:', error);
+	// });
 
 	// if(password === 'password') {
 	// 	console.log('wow login success incredible');
