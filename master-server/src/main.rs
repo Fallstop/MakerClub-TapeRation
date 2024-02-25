@@ -45,7 +45,9 @@ where
     U: Filter<Error = Rejection> + Sync + Send + Clone + 'static,
     U::Extract: warp::reply::Reply,
 {
-    warp::serve(api.or(websocket))
+    let cors = warp::cors()
+        .allow_any_origin();
+    warp::serve(api.with(cors).or(websocket))
         .run(([0, 0, 0, 0], 8080))
         .await;
 }
