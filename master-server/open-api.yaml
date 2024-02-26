@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 servers:
-  - url: http;//localhost:8080
+  - url: http://localhost:8080
     description: Local
 info:
   title: "Maker Club Tape Despensor Master API"
