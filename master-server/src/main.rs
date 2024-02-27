@@ -48,10 +48,10 @@ where
     let cors = warp::cors()
         .allow_any_origin()
         .allow_methods(vec!["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
-        .allow_headers(vec!["Content-Type"]);
+        .allow_headers(vec!["Content-Type", "auth"]);
     let routes = api.or(websocket); 
 
-    warp::serve(routes.recover(api::error::handle_rejection).with(cors))
+    warp::serve(routes.with(cors))
         .run(([0, 0, 0, 0], 8080))
         .await;
 }

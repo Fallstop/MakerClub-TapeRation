@@ -2,11 +2,13 @@
     import { login, set_tape, add_tape } from '$lib/api'
     import { onMount } from 'svelte';
     import { fuzzy } from 'fast-fuzzy';
+    import { get_all_participants } from '$lib/api';
     import { writable } from 'svelte/store';
     import type { User } from '$lib/stores';
     
     onMount(() => {
         login()
+        load_users()
     })
 
     /*
@@ -30,48 +32,12 @@
 	}
 
 
-    let users: User[] = [
-        {
-            id: 1,
-            campus_card: '123456',
-            nick_name: 'John',
-            date_registered: '2021-01-01',
-            last_transaction: '2021-01-01',
-            tape_left_cm: 1001
-        },
-        {
-            id: 2,
-            campus_card: '123457',
-            nick_name: 'Jane',
-            date_registered: '2021-01-01',
-            last_transaction: '2021-01-01',
-            tape_left_cm: 100
-        },
-        {
-            id: 3,
-            campus_card: '123458',
-            nick_name: 'Jack',
-            date_registered: '2021-01-01',
-            last_transaction: '2021-01-01',
-            tape_left_cm: 100
-        },
-        {
-            id: 4,
-            campus_card: '123459',
-            nick_name: 'Jill',
-            date_registered: '2021-01-01',
-            last_transaction: '2021-01-01',
-            tape_left_cm: 100
-        },
-        {
-            id: 5,
-            campus_card: '123460',
-            nick_name: 'James',
-            date_registered: '2021-01-01',
-            last_transaction: '2021-01-01',
-            tape_left_cm: 69
-        }
-    ]
+    let users: User[] = [];
+    function load_users() {
+        get_all_participants().then((data) => {
+            users = data;
+        });
+    }
 
     function handle_set_tape(user: User, form: HTMLFormElement) {
         const tape = form.tape.value - user.tape_left_cm;

@@ -8,7 +8,7 @@ pub mod error;
 pub mod types;
 
 fn auth() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-    warp::header::exact("password", &ENV_CONFIG.password)
+    warp::header::exact("auth", &ENV_CONFIG.password)
 }
 
 #[cfg(not(debug_assertions))]

@@ -255,4 +255,4 @@ components:
     Password:
       type: apiKey
       in: header
-      name: password
+      name: auth
