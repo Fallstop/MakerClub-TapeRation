@@ -11,7 +11,7 @@ export async function serverConnect() {
 		socket.close();
 	}
 	console.log(location.hostname);
-	socket = new WebSocket(`ws://${location.hostname}:8081/stream`);
+	socket = new WebSocket(`ws://${location.hostname}:8081/stream/`);
 	socket.onopen = (event) => {
 		console.log("Connected to server!");
 	};
@@ -31,7 +31,11 @@ export function sendMessage(message: object) {
 	}
 }
 
-export function login(password: string | null = null) {
+
+// ===== NOT WEBSOCKET STUFF (INCREDIBLE) =====
+
+
+export async function login(password: string | null = null) {
 	password = password || get(adminToken);
 
 	if (!password || password == null) {
@@ -40,70 +44,36 @@ export function login(password: string | null = null) {
 	}
 
 	try {
-		new Promise<void>((resolve, reject) => {
-			let xhr = new XMLHttpRequest();
-			xhr.open("GET", `http://${location.hostname}:8080/login`, true);
-			xhr.setRequestHeader("Content-Type", "application/json");
-			xhr.setRequestHeader("password", password || "");
-			xhr.onreadystatechange = () => {
-				if (xhr.readyState === 4) {
-					if (xhr.status === 200) {
-						adminToken.set(password);
-						console.log("Login successful");
-						goto("/");
-						resolve();
-					} else {
-						console.error("Login failed");
-						goto("/login");
-						reject();
-					}
-				}
-			};
-			xhr.send();
+		const response = await fetch(`http://${location.hostname}:8080/login/`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'auth': password || ''
+			}
 		});
-	}
-	catch (error) {
+
+		if (response.ok) {
+			console.log(response);
+			adminToken.set(password);
+			console.log("Login successful");
+			goto("/");
+		} else {
+			console.error("Login failed");
+			goto("/login");
+		}
+	} catch (error) {
 		console.error("Login error:", error);
 		goto("/login");
-	}	
-
-
-	// fetch(`http://${location.hostname}:8080/login`, {
-	// 	method: 'POST',
-	// 	headers: {
-	// 		'Content-Type': 'application/json'
-	// 	},
-	// 	body: JSON.stringify({ password })
-	// })
-	// .then(response => {
-	// 	if (response.ok) {
-	// 		console.log('Login successful');
-	// 		adminToken.set(password);
-	// 		goto('/');
-	// 	} else {
-	// 		console.error('Login failed');
-	// 		goto('/login');
-	// 	}
-	// })
-	// .catch(error => {
-	// 	console.error('Login error:', error);
-	// });
-
-	// if(password === 'password') {
-	// 	console.log('wow login success incredible');
-	// 	adminToken.set(password);
-	// 	goto('/');
-	// } else {
-	// 	console.log('fail')
-	// 	goto('/login');
-	// }
+	}
 }
 
 export function get_participant(campus_card_id: number) {
-	fetch(`http://${location.hostname}:8080/participant/${campus_card_id}`, {
+	fetch(`http://${location.hostname}:8080/participant/${campus_card_id}/`, {
 		method: 'GET',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
+
 		}
 	})
 	.then(response => {
@@ -121,70 +91,65 @@ export function get_participant(campus_card_id: number) {
 }
 
 export function add_tape(campus_card_id: number, tape_cm: number) {
-	fetch(`http://${location.hostname}:8080/${campus_card_id}/tape`, {
+	fetch(`http://${location.hostname}:8080/${campus_card_id}/tape/`, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		},
 		body: JSON.stringify({ tape_cm })
 	})
 }
 
 export function set_tape(campus_card_id: number, tape_cm: number) {
-	fetch(`http://${location.hostname}:8080/${campus_card_id}/tape`, {
+	fetch(`http://${location.hostname}:8080/${campus_card_id}/tape/`, {
 		method: 'PUT',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		},
 		body: JSON.stringify({ tape_cm })
 	})
 }
 
 export function reroll_name(campus_card_id: number) {
-	fetch(`http://${location.hostname}:8080/${campus_card_id}/new_name`, {
+	fetch(`http://${location.hostname}:8080/${campus_card_id}/new_name/`, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		}
 	})
 }
 
-export function get_all_participants() {
-	fetch(`http://${location.hostname}:8080/campus_card`, {
+export async function get_all_participants(): Promise<User[]> {
+	let response = await fetch(`http://${location.hostname}:8080/campus_card/`, {
 		method: 'GET',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		}
 	})
-	.then(response => {
-		if (response.ok) {
-			console.log('Participants found');
-			return response.json() as Promise<User[]>;
-		} else {
-			console.error('Participants not found');
-			return null;
-		}
-	})
-	.catch(error => {
-		console.error('Participants error:', error);
-	});
+	return response.json() as Promise<User[]>;
 }
 
 export function add_global_tape(tape_cm: number) {
-	fetch(`http://${location.hostname}:8080/campus_card/add`, {
+	fetch(`http://${location.hostname}:8080/campus_card/add/`, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		},
 		body: JSON.stringify({ tape_cm })
 	})
 }
 
 export function set_global_tape(tape_cm: number) {
-	fetch(`http://${location.hostname}:8080/campus_card/set`, {
+	fetch(`http://${location.hostname}:8080/campus_card/set/`, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'auth': get(adminToken) || ''
 		},
 		body: JSON.stringify({ tape_cm })
 	})
