@@ -15,7 +15,7 @@ tags:
     description: Routes acting on all participants
 
 paths:
-  /login:
+  /api/login:
     get:
       description: Check the password
       tags: 

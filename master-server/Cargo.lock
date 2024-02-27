@@ -407,6 +407,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-macros"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00c055ee2d014ae5981ce1016374e8213682aa14d9bf40e48ab48b5f3ef20eaa"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2274,6 +2286,7 @@ name = "rust-server"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum-macros",
  "chrono",
  "debouncr",
  "dotenv",
@@ -3451,6 +3464,7 @@ version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5ab3f28191a1881d747bc7c5205a2e51ce5647c97944ac67c23a3f4f1afae10"
 dependencies = [
+ "axum",
  "serde",
  "serde_json",
  "utoipa",

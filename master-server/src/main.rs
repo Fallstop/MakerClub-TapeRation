@@ -1,10 +1,14 @@
 // use crate::websocket::{connection_manager, Users};
 use axum::{
     http::{Method, Uri},
+    routing::get,
     Router,
 };
 use tower_http::cors::{AllowHeaders, AllowOrigin, CorsLayer};
 use tracing::info;
+use utoipa_redoc::{Redoc, Servable};
+
+use crate::api::openapi;
 
 mod api;
 mod db;
@@ -26,6 +30,8 @@ async fn main() -> Result<(), std::io::Error> {
     info!("Starting server on http://localhost:8080/");
 
     let app = Router::new()
+        .route("/openapi.yaml", get(openapi))
+        .merge(Redoc::with_url("/docs", "/openapi.yaml"))
         .nest("/api", api::router())
         .fallback(|uri: Uri| async move {
             crate::api::error::Error::NotFound {

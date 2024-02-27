@@ -8,10 +8,13 @@ use self::{
 use crate::env_config::ENV_CONFIG;
 use axum::{
     extract::FromRequestParts,
-    http::{request::Parts, StatusCode},
+    http::{request::Parts, HeaderName, StatusCode},
+    response::IntoResponse,
     routing::{get, post, put},
     Router,
 };
+use axum_macros::debug_handler;
+use utoipa_redoc::Redoc;
 
 mod cards;
 pub mod error;
@@ -36,6 +39,14 @@ where
 
 async fn login(_: Auth) -> StatusCode {
     StatusCode::NO_CONTENT
+}
+
+#[debug_handler]
+pub async fn openapi() -> impl IntoResponse {
+    (
+        [(HeaderName::from_static("content-type"), "text/x-yaml")],
+        include_str!("../../open-api.yaml"),
+    )
 }
 
 pub fn router() -> Router<sea_orm::DatabaseConnection> {
