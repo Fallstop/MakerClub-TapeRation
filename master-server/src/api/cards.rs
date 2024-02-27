@@ -1,19 +1,21 @@
-use super::error::{ok, ok_status};
-use crate::api::error::{err, ErrorResponse};
 use crate::db::entities::participants::{
     self, ActiveModel as ActiveParticipant, Entity as ParticipantTable, Model as Participant,
 };
-use crate::internal_error;
 use crate::names::new_name;
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::Json;
 use log::error;
-use sea_orm::IntoSimpleExpr;
 use sea_orm::{
     sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
     QueryFilter, Set,
 };
+use sea_orm::{IntoActiveModel, IntoSimpleExpr};
 use serde::Deserialize;
-use warp::http::StatusCode;
-use warp::reply;
+
+use super::error::Error;
+use super::types::{Participants, TapeLeft};
+use super::Auth;
 
 fn now() -> sea_orm::prelude::ChronoDateTime {
     chrono::Local::now().naive_local()
@@ -36,43 +38,34 @@ async fn create_unused_name(db: &DatabaseConnection) -> Result<String, DbErr> {
 async fn find_by_campus_card(
     campus_card: String,
     db: &DatabaseConnection,
-) -> Result<Participant, reply::WithStatus<reply::Json>> {
-    match ParticipantTable::find()
+) -> Result<Participant, Error> {
+    ParticipantTable::find()
         .filter(participants::Column::CampusCard.like(&campus_card))
         .one(db)
-        .await
-    {
-        Ok(Some(participant)) => Ok(participant),
-        Ok(None) => Err(reply::with_status(
-            reply::json(&ErrorResponse {
-                error_message: "Not found".into(),
-            }),
-            StatusCode::NOT_FOUND,
-        )),
-        Err(ex) => {
-            error!("{ex}");
-            Err(err(StatusCode::INTERNAL_SERVER_ERROR, "Internal error"))
-        }
-    }
+        .await?
+        .ok_or_else(|| Error::NotFound {
+            resource: format!("Campus card id {campus_card}"),
+        })
 }
 
-pub async fn register_campus_card(campus_card: String, db: DatabaseConnection) -> impl warp::Reply {
+pub async fn register_campus_card(
+    Path(campus_card): Path<String>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<Json<Participant>, Error> {
     // Check if existing
-    if internal_error!(
-        ParticipantTable::find()
-            .filter(participants::Column::CampusCard.like(&campus_card))
-            .one(&db)
-            .await
-    )
-    .is_some()
+    if ParticipantTable::find()
+        .filter(participants::Column::CampusCard.like(&campus_card))
+        .one(db)
+        .await?
+        .is_some()
     {
-        return err(
-            StatusCode::CONFLICT,
-            "The campus card has already been registered",
-        );
+        return Err(Error::Conflict {
+            resource: format!("Campus card id {campus_card}"),
+        });
     }
 
-    let name = internal_error!(create_unused_name(&db).await);
+    let name = create_unused_name(&db).await?;
 
     let new_participant = ActiveParticipant {
         campus_card: Set(campus_card),
@@ -81,31 +74,24 @@ pub async fn register_campus_card(campus_card: String, db: DatabaseConnection) -
     };
 
     new_participant
-        .insert(&db)
+        .insert(db)
         .await
-        .map(|participant| ok_status(StatusCode::ACCEPTED, &participant))
-        .unwrap_or_else(|ex| {
-            error!("{}", ex);
-            err(StatusCode::CONFLICT, "Participant already registered")
-        })
+        .map(|participant| Ok(Json(participant)))?
 }
 
-pub async fn lookup_campus_card(campus_card: String, db: DatabaseConnection) -> impl warp::Reply {
-    find_by_campus_card(campus_card, &db)
-        .await
-        .map(|res| ok(&res))
-        .unwrap_or_else(|ex| ex)
+pub async fn lookup_campus_card(
+    Path(campus_card): Path<String>,
+    State(ref db): State<DatabaseConnection>,
+) -> Result<Json<Participant>, Error> {
+    Ok(Json(find_by_campus_card(campus_card, &db).await?))
 }
 
-pub async fn list_campus_cards(db: DatabaseConnection) -> impl warp::Reply {
-    ParticipantTable::find()
-        .all(&db)
-        .await
-        .map(|participants| ok(&super::types::Participants { participants }))
-        .unwrap_or_else(|ex| {
-            error!("{ex}");
-            err(StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
-        })
+pub async fn list_campus_cards(
+    State(ref db): State<DatabaseConnection>,
+) -> Result<Json<Participants>, Error> {
+    Ok(Json(super::types::Participants {
+        participants: ParticipantTable::find().all(db).await?,
+    }))
 }
 
 #[derive(Deserialize, Debug, Clone, Copy)]
@@ -114,41 +100,32 @@ pub struct SetParams {
 }
 
 pub async fn set_tape(
-    campus_card: String,
-    SetParams { tape_cm }: SetParams,
-    db: DatabaseConnection,
-) -> impl warp::Reply {
-    let mut participant: ActiveParticipant = match find_by_campus_card(campus_card, &db).await {
-        Ok(val) => val,
-        Err(ex) => return ex,
-    }
-    .into();
+    Path(campus_card): Path<String>,
+    Query(SetParams { tape_cm }): Query<SetParams>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<Json<TapeLeft>, Error> {
+    let mut participant = find_by_campus_card(campus_card, &db)
+        .await?
+        .into_active_model();
 
     participant.tape_left_cm = Set(tape_cm);
     participant.last_transaction = Set(Some(now()));
 
-    if let Err(ex) = participant.update(&db).await {
-        error!("{ex}");
-        err(StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
-    } else {
-        ok_status(
-            StatusCode::ACCEPTED,
-            &super::types::TapeLeft {
-                tape_left_cm: tape_cm,
-            },
-        )
-    }
+    participant.update(db).await?;
+
+    Ok(Json(super::types::TapeLeft {
+        tape_left_cm: tape_cm,
+    }))
 }
 
 pub async fn add_tape(
-    campus_card: String,
-    SetParams { tape_cm }: SetParams,
-    db: DatabaseConnection,
-) -> impl warp::Reply {
-    let participant = match find_by_campus_card(campus_card, &db).await {
-        Ok(val) => val,
-        Err(ex) => return ex,
-    };
+    Path(campus_card): Path<String>,
+    Query(SetParams { tape_cm }): Query<SetParams>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<Json<TapeLeft>, Error> {
+    let participant = find_by_campus_card(campus_card, &db).await?;
 
     let old_tape_cm = participant.tape_left_cm;
 
@@ -156,46 +133,61 @@ pub async fn add_tape(
     participant.tape_left_cm = Set(old_tape_cm + tape_cm);
     participant.last_transaction = Set(Some(now()));
 
-    if let Err(ex) = participant.update(&db).await {
-        error!("{ex}");
-        err(StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
-    } else {
-        ok_status(
-            StatusCode::ACCEPTED,
-            &super::types::TapeLeft {
-                tape_left_cm: old_tape_cm + tape_cm,
-            },
+    participant.update(db).await?;
+    Ok(Json(super::types::TapeLeft {
+        tape_left_cm: old_tape_cm + tape_cm,
+    }))
+}
+
+pub async fn add_all(
+    Query(SetParams { tape_cm }): Query<SetParams>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<StatusCode, Error> {
+    ParticipantTable::update_many()
+        .col_expr(
+            participants::Column::TapeLeftCm,
+            Expr::add(
+                Expr::col(participants::Column::TapeLeftCm),
+                Expr::val(tape_cm),
+            ),
         )
+        .exec(db)
+        .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn set_all(
+    Query(SetParams { tape_cm }): Query<SetParams>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<StatusCode, Error> {
+    ParticipantTable::update_many()
+        .col_expr(
+            participants::Column::TapeLeftCm,
+            Expr::val(tape_cm).into_simple_expr(),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn regenerate_name(
+    Path(campus_card): Path<String>,
+    State(ref db): State<DatabaseConnection>,
+    _: Auth,
+) -> Result<Json<Participant>, Error> {
+    let campus_card = find_by_campus_card(campus_card, &db).await?;
+
+    let mut new_campus_card = campus_card.clone().into_active_model();
+
+    loop {
+        let new_name = create_unused_name(&db).await?;
+        if new_name != campus_card.nick_name {
+            new_campus_card.nick_name = Set(new_name);
+            return Ok(Json(new_campus_card.update(db).await?));
+        }
     }
-}
-
-pub async fn add_all(SetParams { tape_cm }: SetParams, db: DatabaseConnection) -> impl warp::Reply {
-    internal_error!(
-        ParticipantTable::update_many()
-            .col_expr(
-                participants::Column::TapeLeftCm,
-                Expr::add(
-                    Expr::col(participants::Column::TapeLeftCm),
-                    Expr::val(tape_cm),
-                ),
-            )
-            .exec(&db)
-            .await
-    );
-
-    super::error::ok_status(StatusCode::NO_CONTENT, &())
-}
-
-pub async fn set_all(SetParams { tape_cm }: SetParams, db: DatabaseConnection) -> impl warp::Reply {
-    internal_error!(
-        ParticipantTable::update_many()
-            .col_expr(
-                participants::Column::TapeLeftCm,
-                Expr::val(tape_cm).into_simple_expr()
-            )
-            .exec(&db)
-            .await
-    );
-
-    super::error::ok_status(StatusCode::NO_CONTENT, &())
 }

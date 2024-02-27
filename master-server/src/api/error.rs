@@ -1,51 +1,48 @@
-use serde::{Deserialize, Serialize};
-use warp::{
-    http::StatusCode,
-    reply::{self},
-};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::response::Response;
+use axum::Json;
+use sea_orm::DbErr;
+use serde_json::json;
 
-#[macro_export]
-macro_rules! internal_error {
-    ($item:expr) => {
-        match $item {
-            Ok(val) => val,
-            Err(ex) => {
-                log::error!("{ex}");
-                return $crate::api::error::err(
-                    warp::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    "Internal error",
-                );
-            }
+pub enum Error {
+    InternalServerError,
+    NotFound { resource: String },
+    NotAuthenticated,
+    Conflict { resource: String },
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        match self {
+            Error::InternalServerError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error_message": "Internal server error"})),
+            )
+                .into_response(),
+            Error::NotFound { resource } => (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error_message": format!("{resource} not found")})),
+            )
+                .into_response(),
+            Error::NotAuthenticated => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error_message": "You are not authorized to use this route"})),
+            )
+                .into_response(),
+            Error::Conflict { resource } => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error_message": format!("{resource} already exists")})),
+            )
+                .into_response(),
         }
-    };
+    }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct ErrorResponse {
-    pub error_message: String,
-}
-
-pub fn ok<T>(payload: &T) -> reply::WithStatus<reply::Json>
-where
-    T: serde::Serialize,
-{
-    reply::with_status(reply::json(payload), StatusCode::OK)
-}
-
-pub fn ok_status<T>(status_code: StatusCode, payload: &T) -> reply::WithStatus<reply::Json>
-where
-    T: serde::Serialize,
-{
-    reply::with_status(reply::json(payload), status_code)
-}
-
-pub fn err(status_code: StatusCode, msg: impl ToString) -> reply::WithStatus<reply::Json> {
-    reply::with_status(
-        reply::json(&ErrorResponse {
-            error_message: msg.to_string(),
-        }),
-        status_code,
-    )
+impl From<DbErr> for Error {
+    fn from(_value: DbErr) -> Self {
+        Error::InternalServerError
+    }
 }
 
 pub async fn handle_rejection(

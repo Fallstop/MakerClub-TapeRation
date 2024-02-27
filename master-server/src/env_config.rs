@@ -1,6 +1,6 @@
 use std::env;
 
-use log::info;
+use tracing::info;
 
 use once_cell::sync::Lazy;
 

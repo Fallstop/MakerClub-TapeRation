@@ -3,7 +3,7 @@ servers:
   - url: http://localhost:8080
     description: Local
 info:
-  title: "Maker Club Tape Despensor Master API"
+  title: "Maker Club Tape Dispensor Master API"
   version: "0.0.1"
 
 tags: 
