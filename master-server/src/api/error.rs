@@ -44,9 +44,3 @@ impl From<DbErr> for Error {
         Error::InternalServerError
     }
 }
-
-pub async fn handle_rejection(
-    err: warp::Rejection,
-) -> Result<impl warp::Reply, std::convert::Infallible> {
-    Ok(warp::reply::json(&format!("{:?}", err)))
-}
