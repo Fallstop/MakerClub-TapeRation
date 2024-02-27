@@ -1,5 +1,9 @@
 // use crate::websocket::{connection_manager, Users};
-use axum::{http::Uri, Router};
+use axum::{
+    http::{Method, Uri},
+    Router,
+};
+use tower_http::cors::{AllowHeaders, AllowOrigin, CorsLayer};
 use tracing::info;
 
 mod api;
@@ -28,7 +32,13 @@ async fn main() -> Result<(), std::io::Error> {
                 resource: uri.path().to_string(),
             }
         })
-        .with_state(db);
+        .with_state(db)
+        .layer(
+            CorsLayer::new()
+                .allow_origin(AllowOrigin::any())
+                .allow_methods([Method::GET, Method::POST, Method::PUT])
+                .allow_headers(AllowHeaders::any()),
+        );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await

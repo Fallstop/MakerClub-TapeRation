@@ -34,8 +34,8 @@ where
     }
 }
 
-async fn login(_: Auth) -> (StatusCode, ()) {
-    (StatusCode::ACCEPTED, ())
+async fn login(_: Auth) -> StatusCode {
+    StatusCode::NO_CONTENT
 }
 
 pub fn router() -> Router<sea_orm::DatabaseConnection> {
