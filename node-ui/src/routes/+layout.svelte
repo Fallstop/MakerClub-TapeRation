@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { serverConnect } from "$lib/api";
 	import { onMount } from "svelte";
+	import "./styles.scss";
 
 	onMount(() => {
 		serverConnect();
@@ -8,9 +9,7 @@
 </script>
 
 <div class="app">
-	<main>
 		<slot />
-	</main>
 </div>
 
 <style>
@@ -19,9 +18,6 @@
 		flex-direction: column;
 		min-height: 100vh;
 		text-align: center;
-	}
-
-	main {
-		flex: 1;
+		padding: 0 4rem;
 	}
 </style>

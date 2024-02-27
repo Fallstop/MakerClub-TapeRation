@@ -75,16 +75,6 @@ pub async fn keyboard_manager(state: State) -> Result<(), Box<dyn std::error::Er
             .unwrap();
 
         match options[action_selection] {
-            "Scan Card" => {
-                let card_id: String = Input::new()
-                .with_prompt("Card ID")
-                .interact_text()
-                .unwrap();
-                state.lock().await.scan_card(&card_id, false).await;
-            },
-            "Remove Card" => {
-                state.lock().await.unscan_card().await;
-            },
             "Select Length" => {
                 let tape_length: f32 = Input::new()
                     .with_prompt("Tape Length")

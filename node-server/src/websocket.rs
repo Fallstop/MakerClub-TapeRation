@@ -33,6 +33,12 @@ pub struct UIStateUpdate {
     pub card_balance: Option<f32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BarcodeScan {
+    pub barcode_data: String,
+}
+
+
 
 fn get_id() -> usize {
     static COUNTER: AtomicUsize = AtomicUsize::new(1);
@@ -49,13 +55,10 @@ pub async fn connection_manager(ws: WebSocket, state: State) {
         while let Some(result) = user_ws_rx.next().await {
             match result {
                 Ok(msg) => {
-                    for user in state.lock().await.websocket_stream.values_mut() {
-                        match user.send(msg.clone()).await {
-                            Ok(_) => {}
-                            Err(e) => {
-                                error!("Websocket error: {}", e);
-                            }
-                        }
+                    if msg.is_text() {
+                        let msg = msg.to_str().unwrap();
+                        let msg: BarcodeScan = serde_json::from_str(msg).unwrap();
+                        state.lock().await.scan_card(&msg.barcode_data, false).await;
                     }
                 }
                 Err(e) => {

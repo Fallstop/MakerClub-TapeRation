@@ -130,6 +130,11 @@
   resolved "https://registry.yarnpkg.com/@fontsource/fira-mono/-/fira-mono-4.5.10.tgz#443be4b2b4fc6e685b88431fcfdaf8d5f5639bbf"
   integrity sha512-bxUnRP8xptGRo8YXeY073DSpfK74XpSb0ZyRNpHV9WvLnJ7TwPOjZll8hTMin7zLC6iOp59pDZ8EQDj1gzgAQQ==
 
+"@fontsource/fira-sans@^5.0.18":
+  version "5.0.18"
+  resolved "https://registry.yarnpkg.com/@fontsource/fira-sans/-/fira-sans-5.0.18.tgz#f076ea239d00ee59772ab07f23a8e2574143f5c1"
+  integrity sha512-FAxkEg8LSYqihmZ0bBGxVyPzur5P6QwGssVcolUAKO+DrdopbxJxuUb8H8kzSoF9OkVR7ZAmaIQiWvm973PubA==
+
 "@jridgewell/gen-mapping@^0.3.0":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@jridgewell/gen-mapping/-/gen-mapping-0.3.3.tgz#7e02e6eb5df901aaedb08514203b096614024098"

@@ -38,10 +38,11 @@ pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, 
 
     let client = reqwest::Client::new();
 
-    let base_request = match register_card {
+    let mut base_request = match register_card {
         true => client.put(format!("{base_url}/api/campus_card/{card_id}")),
         false => client.get(format!("{base_url}/api/campus_card/{card_id}")),
     };
+    base_request = base_request.header("password", "abc123");
     
     let res = base_request
         .send()
