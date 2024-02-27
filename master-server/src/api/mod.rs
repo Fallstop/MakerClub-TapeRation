@@ -14,7 +14,6 @@ use axum::{
     Router,
 };
 use axum_macros::debug_handler;
-use utoipa_redoc::Redoc;
 
 mod cards;
 pub mod error;
