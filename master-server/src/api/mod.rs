@@ -5,10 +5,10 @@ use self::{
     },
     error::Error,
 };
-use crate::{env_config::ENV_CONFIG, names::new_name};
+use crate::env_config::ENV_CONFIG;
 use axum::{
     extract::FromRequestParts,
-    http::{request::Parts, HeaderName, HeaderValue, StatusCode},
+    http::{request::Parts, StatusCode},
     routing::{get, post, put},
     Router,
 };
@@ -16,10 +16,6 @@ use axum::{
 mod cards;
 pub mod error;
 mod types;
-
-const AUTH_HEADER: HeaderName = HeaderName::from_static("password");
-#[allow(dead_code)]
-const YAML_MIME: HeaderValue = HeaderValue::from_static("text/x-yaml");
 
 struct Auth;
 
@@ -31,7 +27,7 @@ where
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        match parts.headers.get(AUTH_HEADER) {
+        match parts.headers.get("password") {
             Some(auth) if auth.to_str().unwrap_or_default() == ENV_CONFIG.password => Ok(Self),
             Some(_) | None => Err(Error::NotAuthenticated),
         }

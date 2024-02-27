@@ -1,5 +1,5 @@
 // use crate::websocket::{connection_manager, Users};
-use axum::{extract::State, http::Uri, Router};
+use axum::{http::Uri, Router};
 use tracing::info;
 
 mod api;

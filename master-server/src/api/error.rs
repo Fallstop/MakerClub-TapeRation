@@ -6,10 +6,15 @@ use sea_orm::DbErr;
 use serde_json::json;
 
 pub enum Error {
+    #[allow(clippy::enum_variant_names)]
     InternalServerError,
-    NotFound { resource: String },
+    NotFound {
+        resource: String,
+    },
     NotAuthenticated,
-    Conflict { resource: String },
+    Conflict {
+        resource: String,
+    },
 }
 
 impl IntoResponse for Error {

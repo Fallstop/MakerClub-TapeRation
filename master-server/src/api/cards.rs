@@ -5,7 +5,6 @@ use crate::names::new_name;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::Json;
-use log::error;
 use sea_orm::{
     sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
     QueryFilter, Set,
@@ -65,7 +64,7 @@ pub async fn register_campus_card(
         });
     }
 
-    let name = create_unused_name(&db).await?;
+    let name = create_unused_name(db).await?;
 
     let new_participant = ActiveParticipant {
         campus_card: Set(campus_card),
@@ -83,7 +82,7 @@ pub async fn lookup_campus_card(
     Path(campus_card): Path<String>,
     State(ref db): State<DatabaseConnection>,
 ) -> Result<Json<Participant>, Error> {
-    Ok(Json(find_by_campus_card(campus_card, &db).await?))
+    Ok(Json(find_by_campus_card(campus_card, db).await?))
 }
 
 pub async fn list_campus_cards(
@@ -105,7 +104,7 @@ pub async fn set_tape(
     State(ref db): State<DatabaseConnection>,
     _: Auth,
 ) -> Result<Json<TapeLeft>, Error> {
-    let mut participant = find_by_campus_card(campus_card, &db)
+    let mut participant = find_by_campus_card(campus_card, db)
         .await?
         .into_active_model();
 
@@ -125,7 +124,7 @@ pub async fn add_tape(
     State(ref db): State<DatabaseConnection>,
     _: Auth,
 ) -> Result<Json<TapeLeft>, Error> {
-    let participant = find_by_campus_card(campus_card, &db).await?;
+    let participant = find_by_campus_card(campus_card, db).await?;
 
     let old_tape_cm = participant.tape_left_cm;
 
@@ -179,12 +178,12 @@ pub async fn regenerate_name(
     State(ref db): State<DatabaseConnection>,
     _: Auth,
 ) -> Result<Json<Participant>, Error> {
-    let campus_card = find_by_campus_card(campus_card, &db).await?;
+    let campus_card = find_by_campus_card(campus_card, db).await?;
 
     let mut new_campus_card = campus_card.clone().into_active_model();
 
     loop {
-        let new_name = create_unused_name(&db).await?;
+        let new_name = create_unused_name(db).await?;
         if new_name != campus_card.nick_name {
             new_campus_card.nick_name = Set(new_name);
             return Ok(Json(new_campus_card.update(db).await?));
