@@ -1,13 +1,14 @@
 <script lang="ts">
-    export let step: number | string;
+    export let stepNumber: number | string;
 </script>
 <div class="container">
     <div class="circle">
-        {step}
+        {stepNumber}
     </div>
 </div>
 
 <style lang="scss">
+    @use "../../routes/vars.scss" as *;
     .container {
         display: flex;
         justify-content: center;
@@ -21,7 +22,7 @@
         align-items: center;
         width: 1.5em;
         height: 1.5em;
-        border: #333 solid 2px;
+        border: $colorText solid 2px;
         box-sizing: border-box;
         border-radius: 50%;
     }

@@ -1,7 +1,10 @@
-<script>
-    import IconVideo from "$lib/components/IconVideo.svelte";
-import PageTitle from "$lib/components/PageTitle.svelte";
+<script lang="ts">
+    import IconContainer from "$lib/components/IconContainer.svelte";
+    export const stepNumber: string | number = "1";
+    import ScanBarcode from "$lib/svg/ScanBarcode.svelte";
 
 </script>
-<PageTitle stepNumber={1}>Scan the barcode on the back of your Campus Card</PageTitle> 
-<IconVideo/>
+<h2>Scan the barcode on the back of your Campus Card</h2> 
+<IconContainer>
+    <ScanBarcode/>
+</IconContainer>

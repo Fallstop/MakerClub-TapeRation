@@ -6,8 +6,8 @@
     import ScanCampusCard from '$lib/pages/ScanCampusCard.svelte';
     import { UserPage, userPage } from '$lib/stores';
     import { writable } from 'svelte/store';
-    import {onMount} from 'svelte';
     import { sendMessage } from '$lib/api';
+    import StepNumber from '$lib/components/StepNumber.svelte';
 
     let inputValue = writable("");
     function handleBarcode() {
@@ -25,27 +25,30 @@
         if (event.key === "Enter") {
             handleBarcode();
         }
-        console.log(event.code)
         if (event.key === "Backspace") {
             $inputValue = $inputValue.slice(0, -1);
         }
     }
+
+    let stepNumber: string | number;
 </script>
 
 <svelte:window on:keyup={handleInput} />
-
-<h1>Finite Tape Dispenser</h1>
+<div class="flex-row">
+    <StepNumber {stepNumber} />
+    <h1>Finite Tape Dispenser</h1>
+</div>
 
 {#if $userPage === UserPage.ScanCampusCard}
-    <ScanCampusCard />
+    <ScanCampusCard bind:stepNumber />
 {:else if $userPage === UserPage.CampusCardNotFound}
-    <CampusCardNotFound />
+    <CampusCardNotFound bind:stepNumber/>
 {:else if $userPage === UserPage.TapeLengthSelection}
-    <TapeLengthSelection />
+    <TapeLengthSelection bind:stepNumber/>
 {:else if $userPage === UserPage.RegistrationSuccessful}
-    <RegistrationSuccessful />
+    <RegistrationSuccessful bind:stepNumber/>
 {:else if $userPage === UserPage.RegistrationExists}
-    <RegistrationExists />
+    <RegistrationExists bind:stepNumber/>
 {:else}
     <h2>Invalid State Exception</h2>
 {/if}
@@ -57,10 +60,19 @@
 
 
 <style lang="scss">
-    h1 {
-        font-size: 4rem;
-        text-transform: uppercase;
-
+    @use "./vars.scss" as *;
+    .flex-row {
+        display: flex;
+        justify-content: center;
+        padding: 2rem 0;
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            margin: 0;
+            margin-left: 2rem;
+            
+        }
+        
     }
     .hidden-input-row {
         margin-top: auto;
@@ -76,9 +88,7 @@
             border: none;
             outline: none;
             margin: 0;
+            color: $colorText;
         }
-    }
-    .barcode-entry {
-        color: #555;
     }
 </style>
