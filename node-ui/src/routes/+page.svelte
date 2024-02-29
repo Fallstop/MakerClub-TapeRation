@@ -13,9 +13,10 @@
     function handleBarcode() {
         console.log($inputValue);
         let barcode = $inputValue.trim();
-        sendMessage({
+        if (barcode.length < 1) return;
+        sendMessage("BarcodeScan",{
             barcode_data: barcode
-        })
+        });
         $inputValue = "";
     }
     function handleInput(event: KeyboardEvent) {

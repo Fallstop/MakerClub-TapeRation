@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { page } from "$app/stores";
-import { cardBalance, cardID, cardNickname, userPage } from "./stores";
+import { cardBalance, cardID, cardNickname, tapeOptionsCM, userPage } from "./stores";
 
 let socket: WebSocket | null = null;
 
@@ -21,6 +21,8 @@ export async function serverConnect() {
 			cardID.set(data.card_id);
 			cardNickname.set(data.card_nickname);
 			cardBalance.set(data.card_balance);	
+			tapeOptionsCM.set(data.tape_lengths_cm);
+			console.log(data.tape_lengths_cm)
 		}
 		console.log(data);
 	};
@@ -30,9 +32,11 @@ export async function serverConnect() {
 	};
 }
 
-export function sendMessage(message: object) {
+export function sendMessage(action: string,message: object) {
 	if (socket) {
-		socket.send(JSON.stringify(message));
+		socket.send(JSON.stringify({
+			[action]: message
+		}));
 	}
 }
 

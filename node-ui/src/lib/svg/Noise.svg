@@ -46,7 +46,8 @@
 			}
 		}
 		#filtered-elm {
-			animation: noise-change 0.5s infinite;
+			<!-- animation: noise-change 0.5s infinite; -->
+			filter: url("#n-0");
 		}
 	</style>
 </svg>

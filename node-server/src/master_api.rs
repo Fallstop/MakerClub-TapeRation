@@ -14,6 +14,12 @@ pub struct CardData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DispenseTape {
+    pub tape_length_cm: f32,
+    pub unix_timestamp: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ApiError {
     pub error_message: String,
 }
@@ -42,7 +48,7 @@ pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, 
         true => client.put(format!("{base_url}/api/campus_card/{card_id}")),
         false => client.get(format!("{base_url}/api/campus_card/{card_id}")),
     };
-    base_request = base_request.header("password", "abc123");
+    base_request = base_request.header("password", ENV_CONFIG.master_api_password.to_owned());
     
     let res = base_request
         .send()
@@ -52,6 +58,25 @@ pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, 
 
     match data {
         ApiResult::Ok(card_data) => Ok(card_data),
+        ApiResult::Error(error) => Err(Box::new(error)),
+    }
+}
+
+pub async fn dispense_tape(card_id: &str, tape_length_cm: f32) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let base_url = ENV_CONFIG.master_url.to_owned();
+
+    let client = reqwest::Client::new();
+
+    let res = client
+        .post(format!("{base_url}/api/campus_card/{card_id}/add"))
+        .header("password", ENV_CONFIG.master_api_password.to_owned())
+        .query(&[("tape_cm", -tape_length_cm)])
+        .send()
+        .await?;
+    let data: ApiResult = res.json().await.map_err(|e| e.to_string())?;
+
+    match data {
+        ApiResult::Ok(_) => Ok(()),
         ApiResult::Error(error) => Err(Box::new(error)),
     }
 }

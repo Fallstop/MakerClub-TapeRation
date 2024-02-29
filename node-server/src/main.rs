@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 
 use warp::Filter;
 
@@ -8,14 +8,16 @@ use log::info;
 use pretty_env_logger;
 use rust_embed::RustEmbed;
 
-mod gpio;
+mod keyboard_dev;
+mod gpio_queue;
 mod websocket;
 mod env_config;
 mod actions;
 mod master_api;
 
 use crate::actions::{State, StateInner};
-use crate::gpio::{gpio_manager, keyboard_manager};
+use crate::gpio_queue::gpio_manager;
+use crate::keyboard_dev::keyboard_manager;
 use crate::websocket::connection_manager;
 
 #[derive(RustEmbed)]
@@ -36,16 +38,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting server on http://localhost:8081/");
 
+    let (gpio_queue_sender, mut gpio_queue_receiver) = mpsc::channel(100);
+
+
+
     let state = State::new(Mutex::new(StateInner {
         websocket_stream: HashMap::new(),
         card_balance: None,
         card_nickname: None,
-        card_id: None
+        card_id: None,
+        gpio_channel: gpio_queue_sender,
     }));
 
     let gpio_state = state.clone();
     tokio::spawn(async move {
-        gpio_manager(gpio_state).await.unwrap();
+        gpio_manager(gpio_state, &mut gpio_queue_receiver).await.unwrap();
     });
 
     let keyboard_state = state.clone();

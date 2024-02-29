@@ -14,7 +14,7 @@ export const cardID = writable<string>("");
 export const cardNickname = writable<string>("");
 export const cardBalance = writable<number>(0.0);
 export const cardBalanceTweened = tweened(0.0, { duration: 300 });
-cardBalance.subscribe((value) => cardBalanceTweened.set(value));
+cardBalance.subscribe((value) => cardBalanceTweened.set(value ?? 0));
 
 
-export const tapeOptionsCM = [5,15,30]
+export const tapeOptionsCM = writable<number[]>([])
