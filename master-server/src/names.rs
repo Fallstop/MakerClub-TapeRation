@@ -1055,7 +1055,7 @@ pub const ADJECTIVES: [&str; 1045] = [
     "Zippy",
 ];
 
-pub const NOUNS: [&str; 933] = [
+pub const NOUNS: [&str; 930] = [
     "Able",
     "Account",
     "Achieve",
@@ -1292,7 +1292,6 @@ pub const NOUNS: [&str; 933] = [
     "Deer",
     "Degree",
     "Design",
-    "Desire",
     "Desk",
     "Destruction",
     "Detail",
@@ -1660,7 +1659,6 @@ pub const NOUNS: [&str; 933] = [
     "Pocket",
     "Point",
     "Poison",
-    "Police",
     "Polish",
     "Pollution",
     "Popcorn",

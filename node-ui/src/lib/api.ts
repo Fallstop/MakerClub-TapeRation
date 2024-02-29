@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
 import { page } from "$app/stores";
-import { cardBalance, cardID, cardNickname, tapeOptionsCM, userPage } from "./stores";
+import { cardBalance, cardID, cardNickname, defaultUserPage, tapeOptionsCM, userPage } from "./stores";
 
 let socket: WebSocket | null = null;
 
@@ -40,3 +40,9 @@ export function sendMessage(action: string,message: object) {
 	}
 }
 
+
+
+export function resetPage() {
+	userPage.set(defaultUserPage);
+	sendMessage("LogoutCard",{})
+}

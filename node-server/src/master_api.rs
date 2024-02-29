@@ -7,11 +7,19 @@ use crate::env_config::ENV_CONFIG;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CardData {
     pub id: i32,
+    pub campus_card: String,
     pub nick_name: String,
     pub date_registered: String,
     pub last_transaction: Option<String>,
     pub tape_left_cm: f32,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TapeData {
+    pub tape_left_cm: f32,
+}
+
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DispenseTape {
@@ -35,7 +43,8 @@ impl Error for ApiError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 enum ApiResult {
-    Ok(CardData),
+    OkCard(CardData),
+    OkTape(TapeData),
     Error(ApiError),
 }
 
@@ -57,12 +66,13 @@ pub async fn check_card(card_id: &str, register_card: bool) -> Result<CardData, 
     println!("{:?}", data);
 
     match data {
-        ApiResult::Ok(card_data) => Ok(card_data),
+        ApiResult::OkCard(card_data) => Ok(card_data),
         ApiResult::Error(error) => Err(Box::new(error)),
+        _=>{unreachable!()}
     }
 }
 
-pub async fn dispense_tape(card_id: &str, tape_length_cm: f32) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn dispense_tape(card_id: &str, tape_length_cm: f32) -> Result<TapeData, Box<dyn Error + Send + Sync>> {
     let base_url = ENV_CONFIG.master_url.to_owned();
 
     let client = reqwest::Client::new();
@@ -73,10 +83,15 @@ pub async fn dispense_tape(card_id: &str, tape_length_cm: f32) -> Result<(), Box
         .query(&[("tape_cm", -tape_length_cm)])
         .send()
         .await?;
-    let data: ApiResult = res.json().await.map_err(|e| e.to_string())?;
+    let text: String = res.text().await?;
+    println!("{:?}", text);
+    let data: ApiResult = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    // let data: ApiResult = res.json().await.map_err(|e| e.to_string())?;
 
     match data {
-        ApiResult::Ok(_) => Ok(()),
+        ApiResult::OkTape(tape_data) =>Ok(tape_data),
         ApiResult::Error(error) => Err(Box::new(error)),
+        _=>{unreachable!()}
     }
 }

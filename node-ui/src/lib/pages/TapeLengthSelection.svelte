@@ -1,7 +1,9 @@
 <script lang="ts">
-    import { sendMessage } from "$lib/api";
+    import { resetPage, sendMessage } from "$lib/api";
+    import CountdownTimer from "$lib/components/CountdownTimer.svelte";
     import { cardBalance, cardBalanceTweened, cardNickname } from "$lib/stores";
     import { tapeOptionsCM } from "$lib/stores";
+
     export const stepNumber: string | number = "2";
 
 
@@ -14,10 +16,6 @@
         });
     }
 
-    function logout() {
-        sendMessage("LogoutCard",{})
-    }
-
     function formatBalance(balanceAnimated: number, realBalance: number) {
         if (realBalance < 1) {
             return `${(balanceAnimated).toFixed(1)} CM`;
@@ -25,6 +23,8 @@
         return `${(balanceAnimated / 100).toFixed(2)} M`;
     }
 </script>
+<CountdownTimer idleTimeoutMS={30000} />
+
 <h2>Authenticated As <code>{$cardNickname}</code>, ready to dispense tape!</h2> 
 <div class="balance-container">
     <span class="mono-font balance">{formatBalance($cardBalanceTweened, $cardBalance)}</span>
@@ -37,7 +37,7 @@
     {/each}
 </div>
 <div class="finished-container">
-    <button on:click={logout} class="finished-button">Finished</button>
+    <button on:click={resetPage} class="finished-button">Finished</button>
 </div>
 
 <style lang="scss">

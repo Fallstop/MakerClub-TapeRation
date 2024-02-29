@@ -9,6 +9,8 @@ export enum UserPage {
     RegistrationExists = "RegistrationExists",
 }
 
+export const defaultUserPage = UserPage.ScanCampusCard;
+
 export const userPage = writable<UserPage>(UserPage.ScanCampusCard);
 export const cardID = writable<string>("");
 export const cardNickname = writable<string>("");

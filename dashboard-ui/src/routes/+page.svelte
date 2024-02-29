@@ -15,7 +15,7 @@
         load_users()
         setTimeout(() => {
             load_users_loop()
-        }, 5000)
+        }, 1000)
     }
 
     let search = writable('');
@@ -74,6 +74,7 @@
         const campus_card = form.campus_card.value;
         add_user(campus_card);
         console.log('add user', campus_card);
+        form.reset();
 
         setTimeout(() => {
             load_users();
