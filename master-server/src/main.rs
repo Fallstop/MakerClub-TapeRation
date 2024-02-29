@@ -1,22 +1,30 @@
 // use crate::websocket::{connection_manager, Users};
+use crate::api::openapi;
 use axum::{
     http::{Method, Uri},
     routing::get,
     Router,
 };
+use sea_orm::DatabaseConnection;
+use tokio::sync::broadcast::Sender;
 use tower_http::cors::{AllowHeaders, AllowOrigin, CorsLayer};
 use tracing::info;
 use utoipa_redoc::{Redoc, Servable};
-
-use crate::api::openapi;
+use websocket::WsMessage;
 
 mod api;
 mod db;
 mod env_config;
 mod names;
-// mod websocket;
+mod websocket;
+
+struct AppState {
+    tx: Sender<WsMessage>,
+    db: DatabaseConnection,
+}
 
 #[tokio::main]
+#[allow(clippy::needless_return)]
 async fn main() -> Result<(), std::io::Error> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
