@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { login, set_tape, add_tape } from '$lib/api'
+    import { login, set_tape, add_tape, add_global_tape, add_user, reroll_name } from '$lib/api'
     import { onMount } from 'svelte';
     import { fuzzy } from 'fast-fuzzy';
     import { get_all_participants } from '$lib/api';
@@ -8,19 +8,15 @@
     
     onMount(() => {
         login()
-        load_users()
+        load_users_loop()
     })
 
-    /*
-    export type User = {
-        id: number;
-        campus_card: string;
-        nick_name: string;
-        date_registered: string;
-        last_transaction: string;
-        tape_left_cm: number;
-    };
-    */
+    function load_users_loop() {
+        load_users()
+        setTimeout(() => {
+            load_users_loop()
+        }, 5000)
+    }
 
     let search = writable('');
 
@@ -33,22 +29,55 @@
 
 
     let users: User[] = [];
-    function load_users() {
-        get_all_participants().then((data) => {
-            users = data;
-        });
+    async function load_users() {
+        users = (await get_all_participants()).sort((id1, id2) => id1.id - id2.id);
     }
 
     function handle_set_tape(user: User, form: HTMLFormElement) {
         const tape = form.tape.value - user.tape_left_cm;
-        add_tape(user.id, tape);
+        add_tape(user.campus_card, tape);
         console.log('set tape', user, tape);
+
+        setTimeout(() => {
+            load_users();
+        }, 200);
     } 
 
     function handle_add_tape(user: User, form: HTMLFormElement) {
         const tape = form.tape.value;
-        add_tape(user.id, tape);
+        add_tape(user.campus_card, tape);
         console.log('add tape', user, tape);
+
+        setTimeout(() => {
+            load_users();
+        }, 200);
+    }
+
+    function handle_add_global_tape() {
+        const tapeElement = document.getElementById('global-add') as HTMLInputElement;
+        const tape = tapeElement ? tapeElement.value as unknown as number || 0 : 0;
+        add_global_tape(tape);
+        setTimeout(() => {
+            load_users();
+        }, 200);
+    }
+
+    function handle_reroll_name(user: User) {
+        reroll_name(user.campus_card);
+
+        setTimeout(() => {
+            load_users();
+        }, 200);
+    }
+
+    function handle_add_user(form: HTMLFormElement) {
+        const campus_card = form.campus_card.value;
+        add_user(campus_card);
+        console.log('add user', campus_card);
+
+        setTimeout(() => {
+            load_users();
+        }, 200);
     }
 
 </script>
@@ -57,8 +86,8 @@
 
 <div id="universal-data-controls">
     <h2>Total Tape Allocated: {users.reduce((acc, user) => acc + user.tape_left_cm, 0)}cm</h2>
-    <input type="number" value="0"/>
-    <button>Add to All</button>
+    <input id="global-add" type="number" value="0"/>
+    <button on:click={() => {handle_add_global_tape()}}>Add to All</button>
 </div>
 
 <div class="search">
@@ -68,22 +97,28 @@
 <div id="users">
     <table>
         <tr>
+            <th>ID</th>
             <th>User</th>
+            <th></th>
+            <th>Campus Card</th>
             <th>Tape (cm)</th>
             <th>Add (cm)</th>
         </tr>
         {#each users as user}
             <tr class:hidden={!filter(user, $search)}>
-                <td>{user.nick_name}</td>
+                <td>{user.id}</td>
+                <td><p>{user.nick_name}</p></td>
+                <td><button on:click={() => {handle_reroll_name(user)}}>New</button></td>
+                <td>{user.campus_card}</td>
                 <td>
-                    <form on:submit|preventDefault={(form) => {handle_set_tape(user, form.currentTarget)}}>
-                        <input name="tape" type="number" value={user.tape_left_cm}>
+                    <form class="user-tape-form" on:submit|preventDefault={(form) => {handle_set_tape(user, form.currentTarget)}}>
+                        <input class="user-tape" name="tape" type="number" value={user.tape_left_cm}>
                         <button type="submit">Set</button>
                     </form>
                 </td>
                 <td>
-                    <form on:submit|preventDefault={(form) => {handle_add_tape(user, form.currentTarget)}}>
-                        <input name="tape" type="number" value="0">
+                    <form class="user-tape-form" on:submit|preventDefault={(form) => {handle_add_tape(user, form.currentTarget)}}>
+                        <input class="user-tape" name="tape" type="number" value="0">
                         <button type="submit">Add</button>
                     </form>
                 </td>
@@ -92,7 +127,10 @@
     </table>
 </div>
 
-
+<form class="add-user" on:submit|preventDefault={(form) => {handle_add_user(form.currentTarget)}}>
+    <input type="number" name="campus_card" placeholder="Campus Card" />
+    <button type="submit">Add User</button>
+</form>
 
 <style lang="scss">
     #universal-data-controls {
@@ -117,6 +155,7 @@
         width: 100%;
         display: flex;
         flex-direction: column;
+        margin-bottom: 3em;
     }
     input {
         font-size: large;
@@ -147,8 +186,42 @@
         text-align: center;
         width: 33.33%;
         font-size: large;
-    } 
+    }
+    td {
+        .user-tape-form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            input {
+                width: 50%;
+                border-radius: 10px 0 0 10px;
+                border-right: none;
+            }
+            button {
+                border-radius: 0px 10px 10px 0px;
+                border: 2px solid #3f3f3f;
+                border-left: none;
+            }
+        }
+    }
     .hidden {
         display: none;
     }
+
+    .add-user {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        input {
+            width: 50%;
+            border-radius: 10px 0 0 10px;
+            border-right: none;
+        }
+        button {
+            border-radius: 0px 10px 10px 0px;
+            border: 2px solid #3f3f3f;
+            border-left: none;
+        }
+        margin-bottom: 1em;
+    }   
 </style>

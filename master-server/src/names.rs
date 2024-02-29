@@ -1498,7 +1498,6 @@ pub const NOUNS: [&str; 933] = [
     "Kite",
     "Kitten",
     "Kittens",
-    "Kitty",
     "Knee",
     "Knife",
     "Knot",

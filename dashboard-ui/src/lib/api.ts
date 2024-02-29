@@ -65,8 +65,8 @@ export async function login(password: string | null = null) {
   }
 }
 
-export function get_participant(campus_card_id: number) {
-  fetch(`http://${location.hostname}:8080/participant/${campus_card_id}/`, {
+export function get_participant(campus_card_id: string) {
+  fetch(`http://${location.hostname}:8080/api/participant/${campus_card_id}/`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -87,67 +87,77 @@ export function get_participant(campus_card_id: number) {
     });
 }
 
-export function add_tape(campus_card_id: number, tape_cm: number) {
-  fetch(`http://${location.hostname}:8080/${campus_card_id}/tape/`, {
+export function add_tape(campus_card_id: string, tape_cm: number) {
+  fetch(`http://${location.hostname}:8080/api/campus_card/${campus_card_id}/add?tape_cm=${tape_cm}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
-    },
-    body: JSON.stringify({ tape_cm }),
+      password: get(adminToken) || "",
+    }
   });
 }
 
-export function set_tape(campus_card_id: number, tape_cm: number) {
-  fetch(`http://${location.hostname}:8080/${campus_card_id}/tape/`, {
+export function set_tape(campus_card_id: string, tape_cm: number) {
+  fetch(`http://${location.hostname}:8080/api/campus_card/${campus_card_id}/set`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
+      password: get(adminToken) || "",
     },
     body: JSON.stringify({ tape_cm }),
   });
 }
 
-export function reroll_name(campus_card_id: number) {
-  fetch(`http://${location.hostname}:8080/${campus_card_id}/new_name/`, {
+export function reroll_name(campus_card_id: string) {
+  fetch(`http://${location.hostname}:8080/api/campus_card/${campus_card_id}/new_name`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
+      password: get(adminToken) || "",
     },
   });
 }
 
 export async function get_all_participants(): Promise<User[]> {
-  let response = await fetch(`http://${location.hostname}:8080/campus_card/`, {
+  let response = await fetch(`http://${location.hostname}:8080/api/campus_card`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
+      password: get(adminToken) || "",
     },
   });
-  return response.json() as Promise<User[]>;
+  // console.log(await response.json())
+  return (await response.json()).participants as User[];
 }
 
 export function add_global_tape(tape_cm: number) {
-  fetch(`http://${location.hostname}:8080/campus_card/add/`, {
+  fetch(`http://${location.hostname}:8080/api/campus_card/add?tape_cm=${tape_cm}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
+      password: get(adminToken) || "",
     },
-    body: JSON.stringify({ tape_cm }),
+    // body: JSON.stringify({ tape_cm }),
   });
 }
 
 export function set_global_tape(tape_cm: number) {
-  fetch(`http://${location.hostname}:8080/campus_card/set/`, {
+  fetch(`http://${location.hostname}:8080/api/campus_card/set/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      auth: get(adminToken) || "",
+      password: get(adminToken) || "",
     },
     body: JSON.stringify({ tape_cm }),
+  });
+}
+
+export function add_user(campus_card: string) {
+  fetch(`http://${location.hostname}:8080/api/campus_card/${campus_card}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      password: get(adminToken) || "",
+    },
   });
 }
