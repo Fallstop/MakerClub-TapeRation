@@ -1,5 +1,6 @@
 <script lang="ts">
     import Noise from "$lib/svg/Noise.svg?url";
+    import { onMount } from "svelte";
 
     let video: HTMLVideoElement;
     $: {
@@ -7,6 +8,7 @@
             video.playbackRate = 0.5;
         }
     }
+
 </script>
 
 <video
@@ -17,7 +19,6 @@
     bind:this={video}
     muted></video
 >
-
 <div class="noise-filter" style="background: url('{Noise}')"></div>
 
 <style lang="scss">
@@ -41,5 +42,6 @@
         z-index: -4;
         opacity: 0.4;
     }
+    
     
 </style>

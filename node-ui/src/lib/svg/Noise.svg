@@ -1,15 +1,52 @@
-<svg
-  xmlns='http://www.w3.org/2000/svg'
-  xmlns:xlink='http://www.w3.org/1999/xlink'
-  width='300' height='300'>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='300' height='300'>
 
-    <filter id='n' x='0' y='0'>
-            <feTurbulence
-              type='fractalNoise'
-              baseFrequency='0.75'
-              stitchTiles='stitch'/>
-    </filter>
+	<filter id='n-0' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="0" />
+	</filter>
+	<filter id='n-1' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="1" />
+	</filter>
+	<filter id='n-2' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="2" />
+	</filter>
+	<filter id='n-3' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="3" />
+	</filter>
+	<filter id='n-4' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="4" />
+	</filter>
+	<filter id='n-5' x='0' y='0'>
+		<feTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch' seed="5" />
+	</filter>
 
-    <rect width='300' height='300' fill='#000'/>
-    <rect width='300' height='300' filter="url(#n)" opacity='0.80'/>
+
+
+	<rect width='300' height='300' fill='#000' />
+	<rect id="filtered-elm" width='300' height='300' filter="url(#n)" opacity='0.80' />
+
+	<style>
+		@keyframes noise-change {
+			0% {
+				filter: url("#n-0");
+			}
+			20% {
+				filter: url("#n-1");
+			}
+			40% {
+				filter: url("#n-2");
+			}
+			60% {
+				filter: url("#n-3");
+			}
+			80% {
+				filter: url("#n-4");
+			}
+			100% {
+				filter: url("#n-5");
+			}
+		}
+		#filtered-elm {
+			animation: noise-change 0.5s infinite;
+		}
+	</style>
 </svg>
